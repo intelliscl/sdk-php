@@ -44,15 +44,6 @@ $tokenStore = \Intellischool\OAuth2::createTokenStore(
 `$tokenStore` will be populated with a JSON object that you can save in a *very* safe place for use with other endpoints.
 
 
-### Instantiation
-
-To instantiate the SDK using an OAuth2 access token:
-
-```php
-$idap = \Intellischool\Factory::create($tokenStore);
-```
-
-
 ### LTI Launch
 
 To create an LTI Launch token with the given parameters:
