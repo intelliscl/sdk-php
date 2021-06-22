@@ -82,7 +82,7 @@ $token = \Intellischool\Lti\LaunchToken::generate($params,'your_rsa_secret_key')
 The SDK includes a simple version of Intellischool's Sync Agent that automatically synchronises supported local data sources to the Intellischool Data Plaftorm.
 
 
-## Instantiation
+### Instantiation
 
 To instantiate the Sync Agent using a deployment ID and secret:
 
@@ -96,7 +96,7 @@ To instantiate the Sync Agent using an OAuth2 token store:
 $agent = \Intellischool\SyncAgent::createWithOAuth2($tokenStore);
 ```
 
-## Executing sync jobs
+### Executing sync jobs
 
 To run a data synchronisation using the Sync Agent:
 
