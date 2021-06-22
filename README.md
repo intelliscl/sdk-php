@@ -28,7 +28,7 @@ $idap = \Intellischool\Factory::create('access-token');
 To create an LTI Launch token with the given parameters:
 
 ```php
-$params = new \Intellischool\LTI\Launch\Token();
+$params = new \Intellischool\Lti\Launch\Token();
 $params
     ->setSubject('jane@school.edu')
     ->setName('Ms Jane Marie Doe')
