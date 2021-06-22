@@ -28,8 +28,9 @@ $idap = \Intellischool\Factory::create('access-token');
 To create an LTI Launch token with the given parameters:
 
 ```php
-$params = new \Intellischool\Lti\Launch\Token();
+$params = new \Intellischool\Lti\LaunchToken();
 $params
+    ->setIssuer('https://lms.school.edu')
     ->setSubject('jane@school.edu')
     ->setName('Ms Jane Marie Doe')
     ->setGivenName('Jane')
@@ -42,7 +43,7 @@ $params
     ->setTarget('https://analytics.intellischool.cloud/dashboard/12345')
     ->setLaunchPresentation('iframe');
     
-$token = $idap->lti()->getLaunchToken($params);
+$token = $idap->lti()->getLaunchToken($params,'your-rsa-private-key');
 ```
 
 ### Data synchronisation
