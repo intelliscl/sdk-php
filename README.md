@@ -32,7 +32,7 @@ header('Location: '.$authUrl);
 At your callback/redirect endpoint:
 
 ```php
-$tokenStore = \Intellischool\OAuth2::createToken(
+$tokenStore = \Intellischool\OAuth2::createTokenStore(
     'authorization_code',
     $_GET['code'],
     'https://your.redirect.uri/callback',
@@ -41,7 +41,7 @@ $tokenStore = \Intellischool\OAuth2::createToken(
 );
 ```
 
-`$tokenStore` will be populated with a JSON object that you can save in an appropriate place for use with other endpoints.
+`$tokenStore` will be populated with a JSON object that you can save in a *very* safe place for use with other endpoints.
 
 
 ### Instantiation
