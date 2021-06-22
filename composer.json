@@ -1,0 +1,20 @@
+{
+  "name": "intelliscl/sdk",
+  "version": "0.1.0",
+  "description": "Intellischool SDK for PHP",
+  "keywords": [
+    "intellischool",
+    "sdk",
+    "lti",
+    "lti launch",
+    "api"
+  ],
+  "homepage": "https://intellischool.co",
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "Intellischool",
+      "homepage": "https://intellischool.co"
+    }
+  ]
+}
