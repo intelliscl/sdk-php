@@ -15,13 +15,43 @@ Sample applications can be found in the [sample-apps](sample-apps/) folder.
 
 ## Quickstart
 
+### Auth
+
+To initiate an OAuth2 flow:
+
+```php
+$authUrl = \Intellischool\OAuth2::getAuthUrl(
+    'your_client_id',
+    'https://your.redirect.uri/callback',
+    'openid offline_access sync_agent lti_launch'
+);
+
+header('Location: '.$authUrl);
+```
+
+At your callback/redirect endpoint:
+
+```php
+$tokenStore = \Intellischool\OAuth2::createToken(
+    'authorization_code',
+    $_GET['code'],
+    'https://your.redirect.uri/callback',
+    'your_client_id',
+    'your_client_secret'
+);
+```
+
+`$tokenStore` will be populated with a JSON object that you can save in an appropriate place for use with other endpoints.
+
+
 ### Instantiation
 
 To instantiate the SDK using an OAuth2 access token:
 
 ```php
-$idap = \Intellischool\Factory::create('access-token');
+$idap = \Intellischool\Factory::create($tokenStore);
 ```
+
 
 ### LTI Launch
 
