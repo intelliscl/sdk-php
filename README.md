@@ -5,12 +5,16 @@ This SDK has been developed to provide Intellischool partners with a simple and 
 This is an evolving project. Please report any [issues](https://github.com/intelliscl/sdk-php/issues) using GitHub.
 
 
+
+
 ## Installation
 
 ```bash
 composer require intelliscl/sdk
 ```
 Sample applications can be found in the [sample-apps](sample-apps/) folder.
+
+
 
 
 ## Quickstart
@@ -44,7 +48,9 @@ $tokenStore = \Intellischool\OAuth2::createTokenStore(
 `$tokenStore` will be populated with a JSON object that you can save in a *very* safe place for use with other endpoints.
 
 
-### LTI Launch
+
+
+## LTI Launch
 
 To create an LTI Launch token with the given parameters:
 
@@ -66,6 +72,10 @@ $params
     
 $token = \Intellischool\Lti\LaunchToken::generate($params,'your_rsa_secret_key');
 ```
+
+Once your token has been generated, it should be `POST`ed in the `id_token` field to our LTI endpoint from the browser:
+`https://core.intellischool.net/auth/lti`
+
 
 
 ## Data synchronisation
