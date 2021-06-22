@@ -15,11 +15,15 @@ Sample applications can be found in the [sample-apps ](sample-apps/) folder.
 
 ## Quickstart
 
+### Instantiation
+
 To instantiate the SDK using an OAuth2 access token:
 
 ```php
 $idap = \Intellischool\Factory::create('access-token');
 ```
+
+### LTI Launch
 
 To create an LTI Launch token with the given parameters:
 
@@ -40,6 +44,8 @@ $params
     
 $token = $idap->lti()->getLaunchToken($params);
 ```
+
+### Data synchronisation
 
 To run a data synchronisation using the Sync Agent:
 
