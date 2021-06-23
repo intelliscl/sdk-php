@@ -12,7 +12,6 @@ This is an evolving project. Please report any [issues](https://github.com/intel
 ```bash
 composer require intelliscl/sdk
 ```
-Sample applications can be found in the [sample-apps](sample-apps/) folder.
 
 
 
