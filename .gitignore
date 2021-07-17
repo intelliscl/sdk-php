@@ -1,2 +1,4 @@
 .env
 private_key.pem
+vendor/
+sync-csv/*

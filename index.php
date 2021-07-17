@@ -3,7 +3,6 @@
 require 'JwtHandler.php';
 
 try {
-
     if (isset($_POST['uuid'])) {
         $jwt = new JwtHandler();
 
@@ -18,6 +17,9 @@ try {
             'status' => true,
             'messege' => 'Token Generate successfully.',
             'data' => [
+                // "endpoint"=> "sync.vic.intellischool.com.au",
+                // "tenant"=> "34eacce3-9624-48da-ba8e-9e43fdb275af",
+                // 'deployment' => '527b2a7c-b296-4397-a62f-1432c4a870f1',
                 'token' => $token
             ]
         ]);

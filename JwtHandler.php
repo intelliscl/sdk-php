@@ -1,8 +1,8 @@
 <?php
-require './src/JWT.php';
-require './src/ExpiredException.php';
-require './src/SignatureInvalidException.php';
-require './src/BeforeValidException.php';
+require './src/JWT/JWT.php';
+require './src/JWT/ExpiredException.php';
+require './src/JWT/SignatureInvalidException.php';
+require './src/JWT/BeforeValidException.php';
 
 use \IntelliSchool\JWT\JWT;
 
@@ -24,11 +24,11 @@ class JwtHandler
         // Token Validity (3600 second = 1hr)
         $this->expire = $this->issuedAt + 3600;
 
-        // Assign Private Key
-        $this->jwt_secret = file_get_contents('private_key.pem');
-
         // Define Default algo
         $this->algo = 'RS256';
+
+         // Assign Private Key
+        $this->jwt_secret = file_get_contents('private_key.pem');
     }
 
     // ENCODING THE PAYLOAD
@@ -67,11 +67,11 @@ class JwtHandler
         try {
             $decode = JWT::decode($jwt_token, $this->jwt_secret, [$this->algo]);
             return $decode->data;
-        } catch (\Firebase\JWT\ExpiredException $e) {
+        } catch (\IntelliSchool\JWT\ExpiredException $e) {
             return $e->getMessage();
-        } catch (\Firebase\JWT\SignatureInvalidException $e) {
+        } catch (\IntelliSchool\JWT\SignatureInvalidException $e) {
             return $e->getMessage();
-        } catch (\Firebase\JWT\BeforeValidException $e) {
+        } catch (\IntelliSchool\JWT\BeforeValidException $e) {
             return $e->getMessage();
         } catch (\DomainException $e) {
             return $e->getMessage();
