@@ -49,7 +49,6 @@ class SyncHandler
 
     public function iscSyncAuth()
     {
-
         // dummy call This should be removed end of the development.
         $curlD = new Curl();
         $curlD->get('https://is-onprem-sync-au-vic.azurewebsites.net/reset?code=OW1ODVfMAaTd5EX3iN0CwiSWYeqS5sOobk8MuSiXmhmDjD174QjbRQ==');
@@ -58,7 +57,9 @@ class SyncHandler
         $errorResponse = NULL;
 
         try {
-            //Check tempFolder is exist if not then create it
+            /**
+             * Check tempFolder is exist if not then create it
+             */
             if (!file_exists($this->tempFolder)) {
                 throw new Exception($this->tempFolder . ' directory not exists!');
             }
@@ -68,9 +69,8 @@ class SyncHandler
              * For ID and secret: Basic BASE64(deployment_id:deployment_secret)
              * For OAuth2: Bearer access_token
              */
-
             if (empty($this->authType)) {
-                throw new Exception('Auth Type Not defined yet.');
+                throw new Exception('Auth Type Not defined yet');
             }
 
             $curl = new Curl();
@@ -79,13 +79,17 @@ class SyncHandler
             } elseif ($this->authType == "oAuth2") {
                 exit('OAuth2 is not implemented yet');
             } else {
-                exit('You have to set up auth Type = basic.');
+                exit('You have to set up auth Type = basic');
             }
 
-            // Execute CURL call for the deployment, endpoint, tenant, token data
+            /**
+             * Execute CURL call for the deployment, endpoint, tenant, token data
+             */
             $curl->get(self::AUTH_ENDPOINT);
 
-            // Will handle all error code except cUrlHttpStatusCode = 200
+            /**
+             * Handle all error code except cUrlHttpStatusCode = 200
+             */
             if ($curl->error) {
                 /**
                  *  Update-JobStatus with:
@@ -97,6 +101,8 @@ class SyncHandler
                  *      vi. Job_instance
                  *      vii. Metadata
                  */
+
+                //TODO :: How to handle Job status update response
                 $this->syncJobUpdate([
                     'Event_type' => 'Error',
                     'Source' => self::AUTH_SERVICE_NAME,
@@ -107,7 +113,9 @@ class SyncHandler
                     'Metadata' => NULL
                 ]);
 
-                // Throw an error that includes the status code and response payload, then exit.
+                /**
+                 * Throw an error that includes the status code and response payload
+                 */
                 $errorResponse = [
                     'httpStatusCode' => $curl->errorCode,
                     'errorMessage' => $curl->errorMessage,
@@ -130,7 +138,9 @@ class SyncHandler
                     $this->deployment = $responseBody->deployment;
                     $this->token = $responseBody->token;
 
-                    $this->getSyncJobFromRemote($responseBody);
+                    $syncResonse = $this->getSyncJobFromRemote($responseBody);
+
+                    print_r($syncResonse);
                 }
             }
         } catch (Exception $e) {
@@ -142,9 +152,10 @@ class SyncHandler
         } catch (InvalidArgumentException $e) {
             echo $e->getMessage();
         } finally {
-            // Always Return success / failure
+            /**
+             * Always Return success / failure
+             */
             if ($errorResponse) {
-                $errorResponse['source'] = 'Error generated from: ' . __FUNCTION__;
                 print_r(json_encode($errorResponse));
             }
         }
@@ -185,7 +196,9 @@ class SyncHandler
             // Prepare jobURI for syncJobs
             $jobURI = 'https://' . $this->endpoint . DIRECTORY_SEPARATOR . 'job' . DIRECTORY_SEPARATOR . $this->tenant . DIRECTORY_SEPARATOR . $this->deployment . DIRECTORY_SEPARATOR . $statusParams['Job_instance'];
 
-            // Make curl request to get syncJobs
+            /**
+             * Make curl request to update Job Status
+             */
             $curl->patch($jobURI, [
                 'type' => empty($statusParams['Event_type']) ? NULL : $statusParams['Event_type'],
                 'message' => empty($statusParams['Message']) ? NULL : $statusParams['Message'],
@@ -196,25 +209,24 @@ class SyncHandler
             ]);
 
             if ($curl->error) {
-                // Throw an error with the response code and response body, then exit
+                /**
+                 * Throw an error with the response code and response body
+                 */
                 $errorResponse = [
                     'httpStatusCode' => $curl->errorCode,
                     'errorMessage' => $curl->errorMessage,
                     'responseBody' => $curl->getRawResponse()
                 ];
             } elseif ($curl->getHttpStatusCode() == 200) {
-                // will be removed later
-                $errorResponse = [
-                    'params' => $statusParams,
-                    'responseBody' => $curl->getRawResponse()
-                ];
+                // Removed later
+                $errorResponse = [$statusParams];
 
                 $updateStatus = TRUE;
             }
 
-            // If request fails, retry up to 5 times
-
-            
+            /**
+             * TODO:: If request fails, retry up to 5 times
+             */
         } catch (Exception $e) {
             $errorResponse = [
                 'httpStatusCode' => NULL,
@@ -222,9 +234,8 @@ class SyncHandler
                 'trace' => $e->getTraceAsString()
             ];
         } finally {
-            
+
             if ($errorResponse) {
-                $errorResponse['source'] = 'Error generated from: ' . __FUNCTION__;
                 echo json_encode($errorResponse);
 
                 // Always Return success / failure
@@ -235,17 +246,15 @@ class SyncHandler
 
     private function getSyncJobFromRemote()
     {
-        // Define Null
-        $errorResponse = NULL;
-
         try {
-            // Prepare jobURI for syncJobs
-            $jobURI = 'https://' . $this->endpoint . DIRECTORY_SEPARATOR . 'poll' . DIRECTORY_SEPARATOR . $this->tenant . DIRECTORY_SEPARATOR . $this->deployment;
 
             $curl = new Curl();
             $curl->setHeader('Authorization', 'Bearer ' . $this->token);
 
-            // Make curl request to get syncJobs
+            /**
+             * Prepare URI for syncJobs & Make curl request to get syncJobs
+             */
+            $jobURI = 'https://' . $this->endpoint . DIRECTORY_SEPARATOR . 'poll' . DIRECTORY_SEPARATOR . $this->tenant . DIRECTORY_SEPARATOR . $this->deployment;
             $curl->get($jobURI);
 
             if ($curl->error) {
@@ -257,10 +266,11 @@ class SyncHandler
                  *      iv. Message = “Sync Agent was unable to retrieve sync jobs from the IDaP.”
                  */
 
+                //TODO :: How to handle Job status update response
                 $this->syncJobUpdate([
                     'Event_type' => 'Error',
                     'Source' => self::JOB_DISPATCH_NAME,
-                    'Event_id' => 2000 . $curl->getHttpStatusCode(),
+                    'Event_id' => 2000 + $curl->getHttpStatusCode(),
                     'Message' => 'Sync Agent was unable to retrieve sync jobs from the IDaP.',
                     'Job_status' => NULL,
                     'Job_instance' => NULL,
@@ -268,7 +278,7 @@ class SyncHandler
                 ]);
 
                 // Throw an error with the response code and response body, then exit
-                $errorResponse = [
+                return [
                     'httpStatusCode' => $curl->errorCode,
                     'errorMessage' => 'Sync Agent was unable to retrieve sync jobs from the IDaP. ' . $curl->errorMessage,
                     'responseBody' => $curl->getRawResponse()
@@ -286,14 +296,18 @@ class SyncHandler
 
                         // Calling DB Server
                         $resData = $this->syncSqlServer($syncJob);
-                        if ($resData) {
+
+                        // If status is true & rowCount is greater then 0
+                        if ($resData['status'] && $resData['rowCount'] > 0) {
 
                             $csvFilePath = $this->tempFolder . $syncJob['job_instance_uuid'] . '.csv';
 
-                            // Create instance buffer for csv file write
+                            /**
+                             * Write CSv file to Disk. 
+                             */
                             $fp = fopen($csvFilePath, 'w');
                             if ($fp) {
-                                foreach ($resData as $row) {
+                                foreach ($resData['fetchAll'] as $row) {
                                     if (!isset($headings)) {
                                         $headings = array_keys($row);
                                         fputcsv($fp, $headings, ',', '"');
@@ -321,6 +335,7 @@ class SyncHandler
                              * 
                              */
 
+                            //TODO :: How to handle Job status update response
                             $this->syncJobUpdate([
                                 'Event_type' => 'Info',
                                 'Source' => self::SQL_SYNC_SERVICE,
@@ -329,23 +344,30 @@ class SyncHandler
                                 'Job_status' => NULL,
                                 'Job_instance' => $syncJob['job_instance_uuid'],
                                 'Metadata' => [
-                                    'rows' => count($resData) - 1, //Removing header from row count
+                                    'rows' => $resData['rowCount']
                                 ]
                             ]);
+                        } else {
+                            // At this stage syncSqlServer function throw an error. WHat to do next?
+                            // Now it's just skkiping to next row
+                            // TODO:: 
+                            // throw new Exception($resData['errorMessage']);
                         }
 
-                        // Return the path to the CSV file.
-
-                        if ($stop < 1) {
+                        if ($stop < 10) {
                             $stop++;
                         } else {
                             break;
                         }
                     }
-                    print_r([$arCsvFile]);
+
+                    /**
+                     * Return the path to the CSV file.
+                     */
+                    return json_encode($arCsvFile);
                 } else {
                     // If no Jobs is waiting to execute then exit Gracefully
-                    $errorResponse = [
+                    return [
                         'httpStatusCode' => NULL,
                         'errorMessage' => 'No sync Job waiting to execute.'
                     ];
@@ -363,6 +385,8 @@ class SyncHandler
              * vi. Job_instance = job.job_instance_uuid
              * vii. Metadata = convert stack trace (if possible) to JSON object
              */
+
+            //TODO :: How to handle Job status update response
             $this->syncJobUpdate([
                 'Event_type' => 'Error',
                 'Source' => self::SQL_SYNC_SERVICE,
@@ -373,30 +397,22 @@ class SyncHandler
                 'Metadata' => $e->getTraceAsString()
             ]);
 
-            $errorResponse = [
+            return [
                 'httpStatusCode' => NULL,
                 'errorMessage' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ];
         } catch (InvalidArgumentException $e) {
-            $errorResponse = [
+            return [
                 'httpStatusCode' => NULL,
                 'errorMessage' => 'Invalid Argument: ' . $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ];
-        } finally {
-            // Always Return success / failure
-            if ($errorResponse) {
-                $errorResponse['source'] = 'Error generated from: ' . __FUNCTION__;
-                print_r(json_encode($errorResponse));
-            }
         }
     }
 
     private function syncSqlServer($syncJob)
     {
-        $errorResponse = NULL;
-
         try {
             /**
              *  If the job has a template_override value with a sql value, execute this SQL against the database;
@@ -426,7 +442,7 @@ class SyncHandler
                  *      vii. Metadata
                  */
 
-                // How to handle Job status update response
+                //TODO :: How to handle Job status update response
                 $this->syncJobUpdate([
                     'Event_type' => 'Info',
                     'Source' => self::SQL_SYNC_SERVICE,
@@ -437,25 +453,23 @@ class SyncHandler
                     'Metadata' => NULL
                 ]);
 
-                return $conn->query($sql)->fetchAll();
+                $stmt = $conn->query($sql);
+
+                return [
+                    'status' => TRUE,
+                    'fetchAll' => $stmt->fetchAll(),
+                    'rowCount' => $stmt->rowCount()
+                ];
             }
         } catch (PDOException $e) {
             /**
              *  If connection fails, return an error.
              */
-            // print_r($e);
-
-            $errorResponse = [
-                'httpStatusCode' => NULL,
+            return [
+                'status' => FALSE,
                 'errorMessage' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ];
-        } finally {
-            // Always Return success / failure
-            if ($errorResponse) {
-                $errorResponse['source'] = 'Error generated from: ' . __FUNCTION__;
-                print_r(json_encode($errorResponse));
-            }
         }
     }
 }
