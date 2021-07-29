@@ -2,3 +2,4 @@
 private_key.pem
 vendor/
 sync-csv/*
+composer.lock
