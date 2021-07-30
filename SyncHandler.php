@@ -8,10 +8,6 @@ use \Dotenv\Dotenv;
 
 use MicrosoftAzure\Storage\Blob\BlobRestProxy;
 use MicrosoftAzure\Storage\Common\Exceptions\ServiceException;
-use MicrosoftAzure\Storage\Blob\Models\ListBlobsOptions;
-use MicrosoftAzure\Storage\Blob\Models\CreateContainerOptions;
-use MicrosoftAzure\Storage\Blob\Models\PublicAccessType;
-use MicrosoftAzure\Storage\Common\Models\Logging;
 use MicrosoftAzure\Storage\Blob\Models\CreateBlockBlobOptions;
 
 class SyncHandler
@@ -38,11 +34,11 @@ class SyncHandler
     {
         // Load .env configaration with safe loader. 
         // Please make sure TIMEZONE, DEPLOYMENT_ID, DEPLOYMENT_SECRET is exist in .env at root folder
-        $dotenv = Dotenv::createMutable(__DIR__);
-        $dotenv->safeLoad();
-        $dotenv->required('TIMEZONE')->notEmpty();
-        $dotenv->required('DEPLOYMENT_ID')->notEmpty();
-        $dotenv->required('DEPLOYMENT_SECRET')->notEmpty();
+        $dotEnv = Dotenv::createMutable(__DIR__);
+        $dotEnv->safeLoad();
+        $dotEnv->required('TIMEZONE')->notEmpty();
+        $dotEnv->required('DEPLOYMENT_ID')->notEmpty();
+        $dotEnv->required('DEPLOYMENT_SECRET')->notEmpty();
 
         // Set your default time-zone
         date_default_timezone_set($_ENV['TIMEZONE']);
@@ -56,60 +52,12 @@ class SyncHandler
 
         $this->authType = 'basic';
         $this->extFile = '.csv';
-
-
-        $this->testAzure = false;
-        if ($this->testAzure) {
-
-            $jobInstance = 'e8cc3cdf-89a1-5afa-80cf-b9671fe29028';
-
-            $sasPath = 'https://issyncauvic.blob.core.windows.net/ingestion/34eacce3-9624-48da-ba8e-9e43fdb275af_e9729394-7b9d-bdbd-d320-2d258c6682b8.csv?st=2021-07-29T14%3A09%3A20Z&se=2021-07-29T14%3A39%3A20Z&sp=w&sv=2018-03-28&sr=b&sig=4YsRE0uelP71DzYjLt7%2BEpOULt9jsJlpUTQPXj2ExVk%3D403';
-            $sasUrl = parse_url($sasPath);
-            print_r($sasUrl);
-
-            parse_str($sasUrl['query'], $outPut);
-
-            print_r($outPut);
-            // exit;
-
-            $blobEndpoint = $sasUrl['scheme'] . '://' . $sasUrl['host'] . $sasUrl['path'];
-            // $signeture = '?' . $sasUrl['query'];
-            $signeture = $outPut['sig'];
-            $containerName = explode('/', $sasUrl['path'])[1];
-
-            // $azureConString = "BlobEndpoint=$blobEndpoint;SharedAccessSignature=$signeture";
-            $azureConString = "BlobEndpoint=$blobEndpoint;SharedAccessSignature=$signeture";
-
-            // Create blob client.
-            $blobRestProxy = BlobRestProxy::createBlobService($azureConString);
-            // print_r($blobRestProxy);exit;
-
-            $csvFilePath = $this->tempFolder . $jobInstance . $this->extFile;
-
-            $csvContent = fopen($csvFilePath, 'r');
-
-            $blobOptions = new CreateBlockBlobOptions();
-            $blobOptions->setMetadata([
-                'version' => $outPut['sv'],
-                // 'Content-Length' => filesize($csvFilePath),
-                'date' => date('Y-m-d'),
-                // 'cache-control' => 'public, max-age=259200',
-                // 'Authorization' => '',
-            ]);
-            // print_r($options);
-            // exit;
-
-            //Upload blob
-            $blobRestProxy->createBlockBlob($containerName, $jobInstance . $this->extFile, $csvContent, $blobOptions);
-
-            print_r($blobRestProxy);
-            exit;
-        }
     }
 
     public function iscSyncAuth()
     {
-        // dummy call This should be removed end of the development.
+        // To make sure there is enough job available all the time
+        // This should be removed end of the development.
         $curlD = new Curl();
         $curlD->get('https://is-onprem-sync-au-vic.azurewebsites.net/reset?code=OW1ODVfMAaTd5EX3iN0CwiSWYeqS5sOobk8MuSiXmhmDjD174QjbRQ==');
 
@@ -199,8 +147,6 @@ class SyncHandler
                     $this->token = $responseBody->token;
 
                     $syncResonse = $this->getSyncJobFromRemote($responseBody);
-
-                    print_r($syncResonse);
                 }
             }
         } catch (Exception $e) {
@@ -299,7 +245,7 @@ class SyncHandler
             ];
         } finally {
             if ($errorResponse) {
-                // echo json_encode($errorResponse);
+                echo json_encode($errorResponse);
 
                 // Always Return success / failure
                 return $updateStatus;
@@ -356,8 +302,8 @@ class SyncHandler
                     $arJobInstance = [];
                     foreach ($responseSyncJob as $syncJob) {
 
-                        // has to be removed later
-                        if (in_array($stop, [1])) {
+                        // This should be removed end of the development.
+                        if (in_array($stop, [1, 2])) {
                             $stop++;
                             continue;
                         }
@@ -423,8 +369,11 @@ class SyncHandler
                             print_r($resData);
                         }
 
-                        // has to be removed later
-                        if ($stop < 2) {
+                        // Upload file to Azure
+                        $this->syncJobUpload($syncJob['job_instance_uuid']);
+
+                        // This should be removed end of the development.
+                        if ($stop < 3) {
                             $stop++;
                         } else {
                             break;
@@ -434,10 +383,9 @@ class SyncHandler
                     /**
                      * Return the path to the CSV file.
                      */
-                    // return $arCsvFile;
 
                     if ($arJobInstance) {
-                        $this->syncJobUpload($arJobInstance);
+                        return $arJobInstance;
                     }
                 } else {
                     // If no Jobs is waiting to execute then exit Gracefully
@@ -471,6 +419,7 @@ class SyncHandler
                 'Metadata' => $e->getTraceAsString()
             ]);
 
+            // In the iteration process we can't return if there is any error thrown
             // return [
             //     'httpStatusCode' => NULL,
             //     'errorMessage' => $e->getMessage(),
@@ -479,134 +428,126 @@ class SyncHandler
         }
     }
 
-    private function syncJobUpload($arJobInstance)
+    private function syncJobUpload($jobInstance)
     {
 
         $curl = new Curl();
         $curl->setHeader('Authorization', 'Bearer ' . $this->token);
 
-        foreach ($arJobInstance as $jobInstance) {
-            // Prepare jobURI for syncJobs
-            $jobURI = 'https://' . $this->endpoint . DIRECTORY_SEPARATOR . 'upload' . DIRECTORY_SEPARATOR . $this->tenant . DIRECTORY_SEPARATOR . $this->deployment . DIRECTORY_SEPARATOR . $jobInstance;
+        // Prepare jobURI for syncJobs
+        $jobURI = 'https://' . $this->endpoint . DIRECTORY_SEPARATOR . 'upload' . DIRECTORY_SEPARATOR . $this->tenant . DIRECTORY_SEPARATOR . $this->deployment . DIRECTORY_SEPARATOR . $jobInstance;
 
+        /**
+         * Get Azure fule upload URL
+         */
+        $curl->get($jobURI);
+
+        if ($curl->error) {
             /**
-             * Get Azure fule upload URL
+             *  a. Update-JobStatus with:
+             *      i. Event_type = “Error”
+             *      ii. Source = JOB_MANAGER_NAME
+             *      iii. Event_id = 2000+[status code from request]
+             *      iv. Message = “Sync agent encountered an error while retrieving upload URI.”
+             *      v. Job_status = “failed”
+             *      vi. Job_instance = JOB_INSTANCE
+             *  b. Throw an error with the response code and response body, then exit
              */
-            $curl->get($jobURI);
 
-            if ($curl->error) {
-                /**
-                 *  a. Update-JobStatus with:
-                 *      i. Event_type = “Error”
-                 *      ii. Source = JOB_MANAGER_NAME
-                 *      iii. Event_id = 2000+[status code from request]
-                 *      iv. Message = “Sync agent encountered an error while retrieving upload URI.”
-                 *      v. Job_status = “failed”
-                 *      vi. Job_instance = JOB_INSTANCE
-                 *  b. Throw an error with the response code and response body, then exit
-                 */
+            //TODO :: How to handle Job status update response
+            $this->syncJobUpdate([
+                'Event_type' => 'Error',
+                'Source' => self::JOB_MANAGER_NAME,
+                'Event_id' => 2000 +  $curl->getHttpStatusCode(),
+                'Message' => 'Sync agent encountered an error while retrieving upload URI.',
+                'Job_status' => 'failed',
+                'Job_instance' => $jobInstance,
+                'Metadata' => NULL
+            ]);
 
-                //TODO :: How to handle Job status update response
-                $this->syncJobUpdate([
-                    'Event_type' => 'Error',
-                    'Source' => self::JOB_MANAGER_NAME,
-                    'Event_id' => 2000 +  $curl->getHttpStatusCode(),
-                    'Message' => 'Sync agent encountered an error while retrieving upload URI.',
-                    'Job_status' => 'failed',
-                    'Job_instance' => $jobInstance,
-                    'Metadata' => NULL
-                ]);
+            // It's can't be exited. We have to complete this loop
+            $errorResponse = [
+                'httpStatusCode' => $curl->errorCode,
+                'errorMessage' => $curl->errorMessage,
+                'responseBody' => $curl->getRawResponse()
+            ];
+            // print_r($errorResponse);
+        } elseif ($curl->getHttpStatusCode() == 200) {
+            /**
+             * Update-JobStatus with:
+             *  a. Event_type = “Info”
+             *  b. Source = JOB_MANAGER _NAME
+             *  c. Event_id = 2002
+             *  d. Message = “Retrieved upload URI. Commencing upload.”
+             *  e. Job_status = “uploading”
+             *  f. Job_instance = JOB_INSTANCE
+             */
+            //TODO :: How to handle Job status update response
+            $this->syncJobUpdate([
+                'Event_type' => 'Info',
+                'Source' => self::JOB_MANAGER_NAME,
+                'Event_id' => 2002,
+                'Message' => 'Retrieved upload URI. Commencing upload.',
+                'Job_status' => 'uploading',
+                'Job_instance' => $jobInstance,
+                'Metadata' => NULL
+            ]);
 
-                // It's can't be exited. We have to complete this loop
-                $errorResponse = [
-                    'httpStatusCode' => $curl->errorCode,
-                    'errorMessage' => $curl->errorMessage,
-                    'responseBody' => $curl->getRawResponse()
-                ];
-                // print_r($errorResponse);
-            } elseif ($curl->getHttpStatusCode() == 200) {
-                /**
-                 * Update-JobStatus with:
-                 *  a. Event_type = “Info”
-                 *  b. Source = JOB_MANAGER _NAME
-                 *  c. Event_id = 2002
-                 *  d. Message = “Retrieved upload URI. Commencing upload.”
-                 *  e. Job_status = “uploading”
-                 *  f. Job_instance = JOB_INSTANCE
-                 */
-                //TODO :: How to handle Job status update response
-                $this->syncJobUpdate([
-                    'Event_type' => 'Info',
-                    'Source' => self::JOB_MANAGER_NAME,
-                    'Event_id' => 2002,
-                    'Message' => 'Retrieved upload URI. Commencing upload.',
-                    'Job_status' => 'uploading',
-                    'Job_instance' => $jobInstance,
-                    'Metadata' => NULL
-                ]);
+            $azureResponse = json_decode($curl->getRawResponse(), true);
 
-                $azureResponse = json_decode($curl->getRawResponse(), true);
-
-                if ($this->testAzure == false) {
-                    // print_r($azureResponse);
-                    // exit;
-                }
-
-                $arSasUrl = parse_url($azureResponse['sas_url']);
-                parse_str($arSasUrl['query'], $arTokenParams);
-
-                $blobEndpoint = $arSasUrl['scheme'] . '://' . $arSasUrl['host'] . $arSasUrl['path'];
-                // $signeture = $arSasUrl['query'];
-                // $signeture = '?' . $arSasUrl['query'];
-                // $signeture = '?' . urldecode($arSasUrl['query']);
-                $signeture = $arTokenParams['sig'];
-
-                $containerName = explode('/', $arTokenParams['path'])[1];
-
-                # Setup a specific instance of an Azure::Storage::Client
-                $azureConString = "BlobEndpoint=$blobEndpoint;SharedAccessSignature=$signeture";
-
-                // Create blob client.
-                $blobRestProxy = BlobRestProxy::createBlobService($azureConString);
-                // print_r($blobRestProxy);exit;
-
-                try {
-                    $csvFilePath = $this->tempFolder . $jobInstance . $this->extFile;
-                    $csvContent = fopen($csvFilePath, 'r');
-
-                    $blockBlobOptions = new CreateBlockBlobOptions();
-                    $blockBlobOptions->setMetadata([
-                        'version' => $arTokenParams['sv'],
-                        // 'Content-Length' => filesize($csvFilePath),
-                        'date' => date('Y-m-d'),
-                        // 'cache-control' => 'public, max-age=259200',
-                    ]);
-
-                    //Upload blob
-                    $blobRestProxy->createBlockBlob($containerName, $jobInstance . $this->extFile, $csvContent, $blockBlobOptions);
-
-                    print_r($blobRestProxy);
-                    exit;
-                } catch (Exception $e) {
-                    // Handle exception based on error codes and messages.
-                    // Error codes and messages are here: 
-                    // http://msdn.microsoft.com/en-us/library/windowsazure/dd179439.aspx
-                    echo $e->getCode() . ": " . $e->getMessage() . "<br />";
-                } catch (ServiceException $e) {
-                    // Handle exception based on error codes and messages.
-                    // Error codes and messages are here:
-                    // http://msdn.microsoft.com/library/azure/dd179439.aspx
-                    $code = $e->getCode();
-                    $error_message = $e->getMessage();
-                    echo $code . ": " . $error_message . "<br />";
-                }
-
-                exit;
+            if ($this->testAzure == false) {
+                // print_r($azureResponse);
+                // exit;
             }
 
-            print_r($curl->getRawResponse());
+            $arSasUrl = parse_url($azureResponse['sas_url']);
+            parse_str($arSasUrl['query'], $arTokenParams);
+            // print_r([$arSasUrl, $arTokenParams]);
+
+            $blobEndpoint = $arSasUrl['scheme'] . '://' . $arSasUrl['host'] . $arSasUrl['path'];
+            // $signeture = $arSasUrl['query'];
+            $signeture = '?' . $arSasUrl['query'];
+            // $signeture = '?' . urldecode($arSasUrl['query']);
+            // $signeture = $arTokenParams['sig'];
+
+            $containerName = explode('/', $arTokenParams['path'])[1];
+
+            # Setup a specific instance of an Azure::Storage::Client
+            $azureConString = "BlobEndpoint=$blobEndpoint;SharedAccessSignature=$signeture";
+
+            // Create blob client.
+            $blobRestProxy = BlobRestProxy::createBlobService($azureConString);
+
+            try {
+                $csvFilePath = $this->tempFolder . $jobInstance . $this->extFile;
+                $csvContent = fopen($csvFilePath, 'r');
+
+                $blockBlobOptions = new CreateBlockBlobOptions();
+                $blockBlobOptions->setMetadata([
+                    'version' => $arTokenParams['sv'],
+                    // 'Content-Length' => filesize($csvFilePath),
+                    'date' => date('Y-m-d'),
+                    // 'cache-control' => 'public, max-age=259200',
+                ]);
+
+                //Upload blob
+                $blobRestProxy->createBlockBlob($containerName, $jobInstance . $this->extFile, $csvContent, $blockBlobOptions);
+
+                print_r($blobRestProxy);
+            } catch (Exception $e) {
+                // Handle exception based on error codes and messages.
+                // Error codes and messages are here: 
+                // http://msdn.microsoft.com/en-us/library/windowsazure/dd179439.aspx
+                echo $e->getCode() . ": " . $e->getMessage() . "<br />";
+            } catch (ServiceException $e) {
+                // Handle exception based on error codes and messages.
+                // Error codes and messages are here:
+                // http://msdn.microsoft.com/library/azure/dd179439.aspx
+                $code = $e->getCode();
+                $error_message = $e->getMessage();
+                echo $code . ": " . $error_message . "<br />";
+            }
         }
-        exit;
     }
 
     private function syncSqlServer($syncJob)
@@ -669,16 +610,5 @@ class SyncHandler
                 'trace' => $e->getTraceAsString()
             ];
         }
-    }
-
-    private function generateRandomString($length = 6)
-    {
-        $characters = 'abcdefghijklmnopqrstuvwxyz';
-        $charactersLength = strlen($characters);
-        $randomString = '';
-        for ($i = 0; $i < $length; $i++) {
-            $randomString .= $characters[rand(0, $charactersLength - 1)];
-        }
-        return $randomString;
     }
 }
