@@ -1,10 +1,5 @@
 <?php
-require './src/JWT/JWT.php';
-require './src/JWT/ExpiredException.php';
-require './src/JWT/SignatureInvalidException.php';
-require './src/JWT/BeforeValidException.php';
-
-use \IntelliSchool\JWT\JWT;
+use \Firebase\JWT\JWT;
 
 class JwtHandler
 {
@@ -67,11 +62,11 @@ class JwtHandler
         try {
             $decode = JWT::decode($jwt_token, $this->jwt_secret, [$this->algo]);
             return $decode->data;
-        } catch (\IntelliSchool\JWT\ExpiredException $e) {
+        } catch (\Firebase\JWT\ExpiredException $e) {
             return $e->getMessage();
-        } catch (\IntelliSchool\JWT\SignatureInvalidException $e) {
+        } catch (\Firebase\JWT\SignatureInvalidException $e) {
             return $e->getMessage();
-        } catch (\IntelliSchool\JWT\BeforeValidException $e) {
+        } catch (\Firebase\JWT\BeforeValidException $e) {
             return $e->getMessage();
         } catch (\DomainException $e) {
             return $e->getMessage();
