@@ -2,4 +2,6 @@
 private_key.pem
 vendor/
 sync-csv/*
-composer.lock
+/composer.lock
+/composer.phar
+.idea
