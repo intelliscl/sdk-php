@@ -18,8 +18,12 @@ abstract class IDaPAuthHandler
     protected function handleAuthResponse(ResponseInterface $response)
     {
         if ($response->getStatusCode() == 200) {
-            $this->authResponse = json_decode($response->getBody()->getContents());
-            //todo validate?
+            $decodedResponse = json_decode($response->getBody()->getContents());
+            if (empty($decodedResponse->content->tenant) || empty($decodedResponse->content->endpoint) || empty($decodedResponse->content->token))
+            {
+                throw new IntelliSchoolException("Failed to authorise at IDap, missing expected data in response");
+            }
+            $this->authResponse = $decodedResponse->content;
         } else {
             throw new IntelliSchoolException("Failed to authorise at IDap, non-200 response code: ".$response->getStatusCode());
         }
