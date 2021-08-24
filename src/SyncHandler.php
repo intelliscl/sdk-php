@@ -115,7 +115,26 @@ class SyncHandler
 
     private function updateJobStatus(JobStatus $status)
     {
-        //todo
+        for ($tries = 0; $tries < 5; $tries++)
+        {
+            try
+            {
+                $response = $this->httpClient->patch(
+                    $this->getSyncUrl('/job/{tenant_id}/{deployment_id}' . !empty($status->jobInstance) ? '/' . $status->jobInstance : ''),
+                    $this->getSyncGuzzleOptions()
+                );
+                if (!empty($response) && $response->getStatusCode() == 200) {
+                    return;
+                } else {
+                    user_error("Attempt $tries failed to update job status: ".$response->getStatusCode().': '.$response->getBody()->getContents(), E_USER_WARNING);
+                }
+            }
+            catch (GuzzleException $e)
+            {
+                user_error("Attempt $tries failed to update job status: ".$e, E_USER_WARNING);
+            }
+        }
+        user_error('Failed to update job status after 5 attempts', E_USER_WARNING);
     }
 
     private function uploadSyncJob()
