@@ -159,6 +159,7 @@ class SyncHandler
                     ->setMessage('Sync Agent successfully retrieved job.')
                     ->setJobInstance($syncJob->instanceId)
             );
+            echo $syncJob->getPdoString($this->sqlTimeout)."\n";
         }
         //todo
     }

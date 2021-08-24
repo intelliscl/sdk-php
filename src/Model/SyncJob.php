@@ -28,6 +28,7 @@ use Intellischool\IntelliSchoolException;
  * @property-read string $definitionId The job_definition_uuid
  * @property-read string $instanceId The job_instance_uuid
  * @property-read string $query The SQL to retrieve data with. Either syncTemplate->sql or template_override if present.
+ * @property-read string $sourceType The Sync Source Type
  */
 class SyncJob
 {
@@ -50,7 +51,35 @@ class SyncJob
                 return $this->jsonData->job_instance_uuid;
             case 'query':
                 return !empty($this->jsonData->template_override->sql) ? $this->jsonData->template_override->sql : $this->jsonData->syncTemplate->sql;
+            case 'sourceType':
+                return $this->jsonData->syncTemplate->syncSource->type;
         }
         return null;
+    }
+
+    public function getPdoString($timeout): string {
+        $config = $this->jsonData->config;
+
+        switch ($this->sourceType) {
+            case 'MSSQL':
+                $dsn = 'sqlsrv:Server=' . $config->host;
+                if (!empty($config->port)) {
+                    $dsn .= ','.$config->port;
+                }
+                $dsn .= ';Database='.$config->database;
+                $dsn .= ';LoginTimeout='.$timeout;
+                break;
+            case 'MYSQL':
+            case 'PGSQL':
+                $dsn = strtolower($this->sourceType).':host='.$config->host;
+                if (!empty($config->port)) {
+                    $dsn .= ';port='.$config->port;
+                }
+                $dsn .= ';dbname='.$config->database;
+                break;
+            default:
+                throw new IntelliSchoolException('Unsupported sync source: '.$this->sourceType);
+        }
+        return $dsn;
     }
 }
