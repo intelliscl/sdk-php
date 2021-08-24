@@ -1,4 +1,4 @@
-<?php
+<pre><?php
 require_once 'vendor/autoload.php';
 
 $handler = \Intellischool\SyncHandler::createWithIdAndSecret($_GET['deploymentId'], $_GET['deploymentSecret']);

@@ -37,7 +37,7 @@ class SyncHandler
 
     private function __construct(IDaPAuthHandler $authHandler)
     {
-        $this->httpClient = new Client();
+        $this->httpClient = new Client([RequestOptions::HTTP_ERRORS => false]);
         $this->authHandler = $authHandler;
     }
 
