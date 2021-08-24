@@ -105,7 +105,6 @@ class SyncHandler
             throw new IntelliSchoolException('Failed to get jobs list. HTTP Response code '.$response->getStatusCode().' Body: '.$response->getBody()->getContents());
         }
         $body = json_decode($response->getBody()->getContents());
-        print_r($body);
         if (empty($body->sync_jobs)) {
             return [];
         }
