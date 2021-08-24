@@ -3,7 +3,10 @@
 namespace Intellischool;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
+use Intellischool\Model\JobStatus;
+use Intellischool\Model\SyncJob;
 
 class SyncHandler
 {
@@ -48,6 +51,18 @@ class SyncHandler
         throw new \Exception("Not yet implemented");//todo OAuth2
     }
 
+    /**
+     * @return \string[][]
+     */
+    private function getSyncGuzzleOptions(): array
+    {
+        return [
+            RequestOptions::HEADERS => [
+                'Authorization' => 'Bearer ' . $this->authHandler->getSyncToken()
+            ]
+        ];
+    }
+
     private function getSyncUrl($template): string
     {
         return $this->authHandler->getSyncEndpoint().str_replace(
@@ -57,20 +72,49 @@ class SyncHandler
         );
     }
 
+    /**
+     * @return \Intellischool\Model\SyncJob[]
+     */
     private function getSyncJobs(): array
     {
-        $response = $this->httpClient->get($this->getSyncUrl('/poll/{tenant_id}/{deployment_id}?v='.self::SYNC_AGENT_VERSION),
-            [
-                RequestOptions::HEADERS => [
-                    'Authorization' => 'Bearer '.$this->authHandler->getSyncToken()
-                ]
-            ]
-        );
-        //todo: parse
-
+        try
+        {
+            $response = $this->httpClient->get($this->getSyncUrl('/poll/{tenant_id}/{deployment_id}?v=' . self::SYNC_AGENT_VERSION),
+                                               $this->getSyncGuzzleOptions()
+            );
+        }
+        catch (GuzzleException $e)
+        {
+            $this->updateJobStatus(
+                (new JobStatus())
+                    ->setSource(self::JOB_DISPATCH_NAME)
+                    ->setEventType('Error')
+                    ->setEventId(2000)
+                    ->setMessage('Sync Agent was unable to retrieve sync jobs from the IDaP. ' . $e->getMessage())
+            );
+            throw new IntelliSchoolException('Failed to get jobs list', $e);
+        }
+        if ($response->getStatusCode() != 200) {
+            $this->updateJobStatus(
+                (new JobStatus())
+                    ->setSource(self::JOB_DISPATCH_NAME)
+                    ->setEventType('Error')
+                    ->setEventId(2000+$response->getStatusCode())
+                    ->setMessage('Sync Agent was unable to retrieve sync jobs from the IDaP.')
+            );
+            throw new IntelliSchoolException('Failed to get jobs list. HTTP Response code '.$response->getStatusCode().' Body: '.$response->getBody()->getContents());
+        }
+        $body = json_decode($response->getBody()->getContents());
+        print_r($body);
+        if (empty($body->sync_jobs)) {
+            return [];
+        }
+        return array_map(function($element){
+            return new SyncJob($element);
+        }, $body->sync_jobs);
     }
 
-    private function updateJobStatus()
+    private function updateJobStatus(JobStatus $status)
     {
         //todo
     }
@@ -84,6 +128,7 @@ class SyncHandler
     {
         $this->authHandler->authorise($this->httpClient);
         $jobs = $this->getSyncJobs();
+        var_dump($jobs);
         //todo
     }
 

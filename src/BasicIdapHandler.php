@@ -36,7 +36,7 @@ class BasicIdapHandler extends IDaPAuthHandler
         {
             $response = $httpClient->post(SyncHandler::AUTH_ENDPOINT, [RequestOptions::AUTH => [$this->deploymentId, $this->deploymentSecret, 'basic']]);
         } catch (GuzzleException $e) {
-            throw new \RuntimeException("Failed to authorise at IDap, HTTP client error", 0, $e);//todo exceptions
+            throw new IntelliSchoolException("Failed to authorise at IDap, HTTP client error", 0, $e);
         }
         $this->handleAuthResponse($response);
     }

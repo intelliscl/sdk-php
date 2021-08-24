@@ -21,7 +21,7 @@ abstract class IDaPAuthHandler
             $this->authResponse = json_decode($response->getBody()->getContents());
             //todo validate?
         } else {
-            throw new \RuntimeException("Failed to authorise at IDap, non-200 response code: ".$response->getStatusCode());//todo exceptions
+            throw new IntelliSchoolException("Failed to authorise at IDap, non-200 response code: ".$response->getStatusCode());
         }
     }
 
