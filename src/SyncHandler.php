@@ -146,7 +146,20 @@ class SyncHandler
     {
         $this->authHandler->authorise($this->httpClient);
         $jobs = $this->getSyncJobs();
-        var_dump($jobs);
+        if (empty($jobs)) {
+            return;
+        }
+        foreach ($jobs as $syncJob)
+        {
+            $this->updateJobStatus(
+                (new JobStatus())
+                    ->setEventType('Info')
+                    ->setSource(self::JOB_DISPATCH_NAME)
+                    ->setEventId(2000)
+                    ->setMessage('Sync Agent successfully retrieved job.')
+                    ->setJobInstance($syncJob->instanceId)
+            );
+        }
         //todo
     }
 
