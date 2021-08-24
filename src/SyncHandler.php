@@ -65,7 +65,7 @@ class SyncHandler
 
     private function getSyncUrl($template): string
     {
-        return $this->authHandler->getSyncEndpoint().str_replace(
+        return 'https://'.$this->authHandler->getSyncEndpoint().str_replace(
             ['{tenant_id}', '{deployment_id}'],
             [$this->authHandler->getTenantId(), $this->authHandler->getDeploymentId()],
             $template
