@@ -174,8 +174,9 @@ class SyncHandler implements LoggerAwareInterface
                 ->setJobInstance($syncJob->instanceId)
         );
         $pdoString = $syncJob->getPdoString($this->sqlTimeout);
-        $this->logger->debug('Job Info', ['pdoString' => $pdoString, 'query' =>$syncJob->query]);
-        if (empty($pdoString) || empty($syncJob->query))
+        $query = $syncJob->query;//don't inline this, empty() wont work on the dynamic prop
+        $this->logger->debug('Job Info', ['pdoString' => $pdoString, 'query' => $query]);
+        if (empty($pdoString) || empty($query))
         {
             $this->updateJobStatus(
                 (new JobStatus())
@@ -205,7 +206,7 @@ class SyncHandler implements LoggerAwareInterface
                 );
                 return;
             }
-            $statement = $pdo->query($syncJob->query);
+            $statement = $pdo->query($query);
             $cols = null;//ensure they always appear in the same order
             while ($row = $statement->fetch(\PDO::FETCH_ASSOC)) {
                 if ($cols == null) {
