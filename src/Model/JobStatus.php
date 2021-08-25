@@ -108,7 +108,10 @@ class JobStatus implements \JsonSerializable
         $output = array();
         foreach (self::PROPERTY_MAP as $phpProp => $jsonProp)
         {
-            $output[$jsonProp] = $this->{$phpProp};
+            if (!empty($this->{$phpProp}))
+            {
+                $output[$jsonProp] = $this->{$phpProp};
+            }
         }
         return $output;
     }

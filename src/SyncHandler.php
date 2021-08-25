@@ -140,9 +140,12 @@ class SyncHandler implements LoggerAwareInterface
         {
             try
             {
+                $options = $this->getSyncGuzzleOptions();
+                $options[RequestOptions::HEADERS]['Content-Type'] = 'application/json';
+                $options[RequestOptions::BODY] = json_encode($status);
                 $response = $this->httpClient->patch(
                     $statusUpdateUrl,
-                    $this->getSyncGuzzleOptions()
+                    $options
                 );
                 $this->logGuzzleResponse($response);
                 if (!empty($response) && $response->getStatusCode() == 200) {
