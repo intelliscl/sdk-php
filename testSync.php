@@ -5,24 +5,22 @@ class PrintLogger extends \Psr\Log\AbstractLogger{
 
     public function log($level, $message, array $context = array())
     {
-        echo "<div><strong>$level</strong>: $message";
+        echo "$level: $message\n";
 
         if (!empty($context)) {
-            echo "<br>Context:<textarea rows='10' cols='100'>";
             var_dump($context);
-            echo "</textarea>";
         }
 
-        echo "</div>";
+        echo "\n-------------------------------\n\n";
     }
 }
 
-$handler = \Intellischool\SyncHandler::createWithIdAndSecret($_GET['deploymentId'], $_GET['deploymentSecret']);
+$handler = \Intellischool\SyncHandler::createWithIdAndSecret($argv[1], $argv[2]);
 $handler->setLogger(new PrintLogger());
 try
 {
     $handler->doSync();
 } catch (Exception $e) {
-	echo "<b>Unhandled exception</b>: ";
+	echo "Unhandled exception: ";
     var_dump($e);
 }
