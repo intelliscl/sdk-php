@@ -134,7 +134,7 @@ class SyncHandler implements LoggerAwareInterface
 
     private function updateJobStatus(JobStatus $status)
     {
-        $statusUpdateUrl = $this->getSyncUrl('/job/{tenant_id}/{deployment_id}' . !empty($status->jobInstance) ? '/' . $status->jobInstance : '');
+        $statusUpdateUrl = $this->getSyncUrl('/job/{tenant_id}/{deployment_id}' . (!empty($status->jobInstance) ? '/' . $status->jobInstance : ''));
         $this->logger->debug('Updating job status', ['status'=>$status, 'url'=>$statusUpdateUrl]);
         for ($tries = 0; $tries < 5; $tries++)
         {
