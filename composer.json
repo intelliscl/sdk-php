@@ -29,6 +29,11 @@
 		"vlucas/phpdotenv": "^5.3",
 		"firebase/php-jwt": "^5.4"
 	},
+	"suggest": {
+		"ext-pdo_mysql": "*",
+		"ext-pdo_pgsql": "*",
+		"ext-pdo_sqlsrv": "*"
+	},
 	"autoload": {
 		"psr-4": {
 			"Intellischool\\": "src/"
