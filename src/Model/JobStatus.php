@@ -26,7 +26,8 @@ class JobStatus implements \JsonSerializable
     public string $message;
     public ?string $jobStatus;
     public ?string $jobInstance;
-    public ?object $meta;
+    /** @var mixed */
+    public $meta;
 
     /**
      * @param string $eventType
