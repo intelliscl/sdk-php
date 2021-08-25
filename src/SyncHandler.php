@@ -7,8 +7,12 @@ use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
 use Intellischool\Model\JobStatus;
 use Intellischool\Model\SyncJob;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
-class SyncHandler
+class SyncHandler implements LoggerAwareInterface
 {
     public const AUTH_ENDPOINT = 'https://core.intellischool.net/auth/onprem-sync';
     public const SYNC_AGENT_NAME = 'Intellischool PHP Sync Agent';
@@ -35,8 +39,14 @@ class SyncHandler
      */
     private Client $httpClient;
 
+    /**
+     * @var \Psr\Log\LoggerInterface Logger to use. Defaults to a no-op logger
+     */
+    private LoggerInterface $logger;
+
     private function __construct(IDaPAuthHandler $authHandler)
     {
+        $this->logger = new NullLogger();
         $this->httpClient = new Client([RequestOptions::HTTP_ERRORS => false]);
         $this->authHandler = $authHandler;
     }
@@ -65,11 +75,19 @@ class SyncHandler
 
     private function getSyncUrl($template): string
     {
-        return 'https://'.$this->authHandler->getSyncEndpoint().str_replace(
-            ['{tenant_id}', '{deployment_id}'],
-            [$this->authHandler->getTenantId(), $this->authHandler->getDeploymentId()],
-            $template
-        );
+        $url = 'https://' . $this->authHandler->getSyncEndpoint() . str_replace(
+                ['{tenant_id}', '{deployment_id}'],
+                [$this->authHandler->getTenantId(), $this->authHandler->getDeploymentId()],
+                $template
+            );
+        $this->logger->debug("Generated url: ".$url, ['template'=>$url]);
+        return $url;
+    }
+
+    private function logGuzzleResponse(ResponseInterface $response)
+    {
+        $this->logger->debug('Response '.$response->getStatusCode(), ['headers'=>$response->getHeaders(), 'body'=>(string)$response->getBody()]);
+        $response->getBody()->rewind();
     }
 
     /**
@@ -94,6 +112,7 @@ class SyncHandler
             );
             throw new IntelliSchoolException('Failed to get jobs list', $e);
         }
+        $this->logGuzzleResponse($response);
         if ($response->getStatusCode() != 200) {
             $this->updateJobStatus(
                 (new JobStatus())
@@ -115,26 +134,29 @@ class SyncHandler
 
     private function updateJobStatus(JobStatus $status)
     {
+        $statusUpdateUrl = $this->getSyncUrl('/job/{tenant_id}/{deployment_id}' . !empty($status->jobInstance) ? '/' . $status->jobInstance : '');
+        $this->logger->debug('Updating job status', ['status'=>$status, 'url'=>$statusUpdateUrl]);
         for ($tries = 0; $tries < 5; $tries++)
         {
             try
             {
                 $response = $this->httpClient->patch(
-                    $this->getSyncUrl('/job/{tenant_id}/{deployment_id}' . !empty($status->jobInstance) ? '/' . $status->jobInstance : ''),
+                    $statusUpdateUrl,
                     $this->getSyncGuzzleOptions()
                 );
+                $this->logGuzzleResponse($response);
                 if (!empty($response) && $response->getStatusCode() == 200) {
                     return;
                 } else {
-                    user_error("Attempt $tries failed to update job status: ".$response->getStatusCode().': '.$response->getBody()->getContents(), E_USER_WARNING);
+                    $this->logger->warning("Attempt $tries failed to update job status: ".$response->getStatusCode(), ['body'=>$response->getBody()->getContents()]);
                 }
             }
             catch (GuzzleException $e)
             {
-                user_error("Attempt $tries failed to update job status: ".$e, E_USER_WARNING);
+                $this->logger->warning("Attempt $tries failed to update job status", ['exception'=>$e]);
             }
         }
-        user_error('Failed to update job status after 5 attempts', E_USER_WARNING);
+        $this->logger->error('Failed to update job status after 5 attempts');
     }
 
     private function uploadSyncJob()
@@ -147,10 +169,13 @@ class SyncHandler
         $this->authHandler->authorise($this->httpClient);
         $jobs = $this->getSyncJobs();
         if (empty($jobs)) {
+            $this->logger->info("No jobs found");
             return;
         }
+        $this->logger->info("Found ".count($jobs).' jobs');
         foreach ($jobs as $syncJob)
         {
+            $this->logger->debug("Processing job");
             $this->updateJobStatus(
                 (new JobStatus())
                     ->setEventType('Info')
@@ -159,7 +184,7 @@ class SyncHandler
                     ->setMessage('Sync Agent successfully retrieved job.')
                     ->setJobInstance($syncJob->instanceId)
             );
-            echo $syncJob->getPdoString($this->sqlTimeout)."\n";
+            $this->logger->debug($syncJob->getPdoString($this->sqlTimeout));
         }
         //todo
     }
@@ -183,5 +208,10 @@ class SyncHandler
     {
         $this->sqlTimeout = $sqlTimeout;
         return $this;
+    }
+
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
     }
 }
