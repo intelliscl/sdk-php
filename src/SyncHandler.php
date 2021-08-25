@@ -243,6 +243,7 @@ class SyncHandler implements LoggerAwareInterface
             );
             return;
         }
+        fflush($file);
         rewind($file);
 
         $this->uploadSyncJob($syncJob, $file);
@@ -254,7 +255,47 @@ class SyncHandler implements LoggerAwareInterface
      */
     private function uploadSyncJob(SyncJob $syncJob, $tmpFile)
     {
-        //todo
+        try
+        {
+            $response = $this->httpClient->get($this->getSyncUrl('/upload/{tenant_id}/{deployment_id}/' . $syncJob->instanceId),
+                                               $this->getSyncGuzzleOptions()
+            );
+        }
+        catch (GuzzleException $e)
+        {
+            $this->updateJobStatus(
+                (new JobStatus())
+                    ->setSource(self::JOB_MANAGER_NAME)
+                    ->setEventType(JobStatus::ERROR_EVENT)
+                    ->setEventId(2000)
+                    ->setMessage('Sync agent encountered an error while retrieving upload URI: ' . $e->getMessage())
+                    ->setJobStatus('failed')
+                    ->setJobInstance($syncJob->instanceId)
+            );
+            throw new IntelliSchoolException('Failed to get job upload URI.', $e);
+        }
+        $this->logGuzzleResponse($response);
+        if ($response->getStatusCode() != 200) {
+            $this->updateJobStatus(
+                (new JobStatus())
+                    ->setSource(self::JOB_MANAGER_NAME)
+                    ->setEventType(JobStatus::ERROR_EVENT)
+                    ->setEventId(2000+$response->getStatusCode())
+                    ->setMessage('Sync agent encountered an error while retrieving upload URI.')
+                    ->setJobStatus('failed')
+                    ->setJobInstance($syncJob->instanceId)
+            );
+            throw new IntelliSchoolException('Failed to get job upload URI. HTTP Response code '.$response->getStatusCode().' Body: '.$response->getBody()->getContents());
+        }
+        $this->updateJobStatus(
+            (new JobStatus())
+                ->setSource(self::JOB_MANAGER_NAME)
+                ->setEventType(JobStatus::INFO_EVENT)
+                ->setEventId(2002)
+                ->setMessage('Retrieved upload URI. Commencing upload.')
+                ->setJobStatus('uploading')
+                ->setJobInstance($syncJob->instanceId)
+        );
     }
 
     public function doSync()
