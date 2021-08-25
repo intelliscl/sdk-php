@@ -106,7 +106,7 @@ class SyncHandler implements LoggerAwareInterface
             $this->updateJobStatus(
                 (new JobStatus())
                     ->setSource(self::JOB_DISPATCH_NAME)
-                    ->setEventType('Error')
+                    ->setEventType(JobStatus::ERROR_EVENT)
                     ->setEventId(2000)
                     ->setMessage('Sync Agent was unable to retrieve sync jobs from the IDaP. ' . $e->getMessage())
             );
@@ -117,7 +117,7 @@ class SyncHandler implements LoggerAwareInterface
             $this->updateJobStatus(
                 (new JobStatus())
                     ->setSource(self::JOB_DISPATCH_NAME)
-                    ->setEventType('Error')
+                    ->setEventType(JobStatus::ERROR_EVENT)
                     ->setEventId(2000+$response->getStatusCode())
                     ->setMessage('Sync Agent was unable to retrieve sync jobs from the IDaP.')
             );
@@ -162,7 +162,96 @@ class SyncHandler implements LoggerAwareInterface
         $this->logger->error('Failed to update job status after 5 attempts');
     }
 
-    private function uploadSyncJob()
+    private function processJob(SyncJob $syncJob)
+    {
+        $this->logger->debug("Processing job", ['job'=>$syncJob]);
+        $this->updateJobStatus(
+            (new JobStatus())
+                ->setEventType(JobStatus::INFO_EVENT)
+                ->setSource(self::JOB_DISPATCH_NAME)
+                ->setEventId(2000)
+                ->setMessage('Sync Agent successfully retrieved job.')
+                ->setJobInstance($syncJob->instanceId)
+        );
+        $pdoString = $syncJob->getPdoString($this->sqlTimeout);
+        $this->logger->debug('Job Info', ['pdoString' => $pdoString, 'query' =>$syncJob->query]);
+        if (empty($pdoString) || empty($syncJob->query))
+        {
+            $this->updateJobStatus(
+                (new JobStatus())
+                    ->setEventType(JobStatus::ERROR_EVENT)
+                    ->setSource(self::SQL_SERVICE_NAME)
+                    ->setEventId(3602)
+                    ->setMessage("An error was encountered while extracting data: \nJob is missing info needed for database query")
+                    ->setJobInstance($syncJob->instanceId)
+                    ->setJobStatus("failed")
+            );
+            return;
+        }
+        try
+        {
+            $pdo = new \PDO($pdoString, $syncJob->dbUsername, $syncJob->dbPassword);
+            $file = tmpfile();
+            if ($file === false) {
+                $this->logger->error('Could not create temp file');
+                $this->updateJobStatus(
+                    (new JobStatus())
+                        ->setEventType(JobStatus::ERROR_EVENT)
+                        ->setSource(self::SQL_SERVICE_NAME)
+                        ->setEventId(3602)
+                        ->setMessage("An error was encountered while extracting data: \nCould not create temp file")
+                        ->setJobInstance($syncJob->instanceId)
+                        ->setJobStatus("failed")
+                );
+                return;
+            }
+            $statement = $pdo->query($syncJob->query);
+            $cols = null;//ensure they always appear in the same order
+            while ($row = $statement->fetch(\PDO::FETCH_ASSOC)) {
+                if ($cols == null) {
+                    $cols = array_keys($row);
+                    fputcsv($file, $cols);
+                }
+                $values = array();
+                foreach ($cols as $col)
+                {
+                    $values[$col] = $row[$col];
+                }
+                fputcsv($file, $values);
+            }
+            $this->updateJobStatus(
+                (new JobStatus())
+                    ->setEventType(JobStatus::INFO_EVENT)
+                    ->setSource(self::SQL_SERVICE_NAME)
+                    ->setEventId(3002)
+                    ->setMessage("Successfully executed SQL and saved output.")
+                    ->setJobInstance($syncJob->instanceId)
+                    ->setMeta(['rows'=>$statement->rowCount()])
+            );
+        } catch (\PDOException $e) {
+            $this->logger->error('Sync process failed failed', ['exception'=>$e]);
+            $this->updateJobStatus(
+                (new JobStatus())
+                    ->setEventType(JobStatus::ERROR_EVENT)
+                    ->setSource(self::SQL_SERVICE_NAME)
+                    ->setEventId(3602)
+                    ->setMessage("An error was encountered while extracting data: \nPDOException: ".$e->getMessage())
+                    ->setJobInstance($syncJob->instanceId)
+                    ->setJobStatus("failed")
+                    ->setMeta($e->getTrace())
+            );
+            return;
+        }
+        rewind($file);
+
+        $this->uploadSyncJob($syncJob, $file);
+    }
+
+    /**
+     * @param \Intellischool\Model\SyncJob $syncJob
+     * @param resource                     $tmpFile
+     */
+    private function uploadSyncJob(SyncJob $syncJob, $tmpFile)
     {
         //todo
     }
@@ -178,18 +267,8 @@ class SyncHandler implements LoggerAwareInterface
         $this->logger->info("Found ".count($jobs).' jobs');
         foreach ($jobs as $syncJob)
         {
-            $this->logger->debug("Processing job", ['job'=>$syncJob]);
-            $this->updateJobStatus(
-                (new JobStatus())
-                    ->setEventType('Info')
-                    ->setSource(self::JOB_DISPATCH_NAME)
-                    ->setEventId(2000)
-                    ->setMessage('Sync Agent successfully retrieved job.')
-                    ->setJobInstance($syncJob->instanceId)
-            );
-            $this->logger->debug('Job Info', ['pdoString'=>$syncJob->getPdoString($this->sqlTimeout), 'query'=>$syncJob->query]);
+            $this->processJob($syncJob);
         }
-        //todo
     }
 
     /**

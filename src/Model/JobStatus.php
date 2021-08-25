@@ -17,6 +17,9 @@ class JobStatus implements \JsonSerializable
         'meta'        => 'Metadata'
     ];
 
+    public const INFO_EVENT = 'Info';
+    public const ERROR_EVENT = 'Error';
+
     public string $eventType;
     public string $source;
     public int $eventId;
@@ -74,7 +77,7 @@ class JobStatus implements \JsonSerializable
      *
      * @return JobStatus
      */
-    public function setJobStatus(?string $jobStatus): JobStatus
+    public function setJobStatus(string $jobStatus): JobStatus
     {
         $this->jobStatus = $jobStatus;
         return $this;
@@ -85,24 +88,24 @@ class JobStatus implements \JsonSerializable
      *
      * @return JobStatus
      */
-    public function setJobInstance(?string $jobInstance): JobStatus
+    public function setJobInstance(string $jobInstance): JobStatus
     {
         $this->jobInstance = $jobInstance;
         return $this;
     }
 
     /**
-     * @param object|null $meta
+     * @param mixed $meta
      *
      * @return JobStatus
      */
-    public function setMeta(?object $meta): JobStatus
+    public function setMeta($meta): JobStatus
     {
         $this->meta = $meta;
         return $this;
     }
 
-    //from JsonSerializable
+    /** @inheritDoc */
     public function jsonSerialize()
     {
         $output = array();

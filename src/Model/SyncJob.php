@@ -29,6 +29,8 @@ use Intellischool\IntelliSchoolException;
  * @property-read string $instanceId The job_instance_uuid
  * @property-read string $query The SQL to retrieve data with. Either syncTemplate->sql or template_override if present.
  * @property-read string $sourceType The Sync Source Type
+ * @property-read string $dbUsername The username for the Sync Source
+ * @property-read string $dbPassword The password for the Sync Source
  */
 class SyncJob
 {
@@ -53,6 +55,10 @@ class SyncJob
                 return !empty($this->jsonData->template_override->sql) ? $this->jsonData->template_override->sql : $this->jsonData->syncTemplate->sql;
             case 'sourceType':
                 return $this->jsonData->syncTemplate->syncSource->type;
+            case 'dbUsername':
+                return $this->jsonData->config->username;
+            case 'dbPassword':
+                return $this->jsonData->config->password;
         }
         return null;
     }
