@@ -187,7 +187,7 @@ class SyncHandler implements LoggerAwareInterface
                     ->setMessage('Sync Agent successfully retrieved job.')
                     ->setJobInstance($syncJob->instanceId)
             );
-            $this->logger->debug($syncJob->getPdoString($this->sqlTimeout));
+            $this->logger->debug('Job Info', ['pdoString'=>$syncJob->getPdoString($this->sqlTimeout), 'query'=>$syncJob->query]);
         }
         //todo
     }
