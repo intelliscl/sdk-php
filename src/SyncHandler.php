@@ -287,6 +287,30 @@ class SyncHandler implements LoggerAwareInterface
             );
             throw new IntelliSchoolException('Failed to get job upload URI. HTTP Response code '.$response->getStatusCode().' Body: '.$response->getBody()->getContents());
         }
+        $sasResponse = json_decode($response->getBody()->getContents());
+        $sasUrl = $sasResponse->sas_url;
+        if (empty($sasUrl)) {
+            $this->updateJobStatus(
+                (new JobStatus())
+                    ->setSource(self::JOB_MANAGER_NAME)
+                    ->setEventType(JobStatus::ERROR_EVENT)
+                    ->setEventId(2000+$response->getStatusCode())
+                    ->setMessage('Sync agent encountered an error while retrieving upload URI: no sas_url found')
+                    ->setJobStatus('failed')
+                    ->setJobInstance($syncJob->instanceId)
+            );
+            $this->logger->error('Sync agent encountered an error while retrieving upload URI: no sas_url found', ['body'=>$sasResponse]);
+            return;
+        }
+        $headers = [];
+        if (!empty($sasResponse->headers))
+        {
+            foreach ($sasResponse->headers as $header)
+            {
+                $headers[$header->key] = $header->value;
+            }
+            $this->logger->debug('found headers', $headers);
+        }
         $this->updateJobStatus(
             (new JobStatus())
                 ->setSource(self::JOB_MANAGER_NAME)
@@ -296,6 +320,28 @@ class SyncHandler implements LoggerAwareInterface
                 ->setJobStatus('uploading')
                 ->setJobInstance($syncJob->instanceId)
         );
+        $uploadSucceeded = false;
+        for ($tries = 0; $tries < 5; $tries++)
+        {
+            $uploadResponse = $this->httpClient->put($sasUrl, [
+                RequestOptions::HEADERS => $headers,
+                RequestOptions::BODY => $tmpFile
+            ]);
+            $this->logGuzzleResponse($uploadResponse);
+            if ($uploadResponse->getStatusCode() >= 200 && $uploadResponse < 300)
+            {
+                $uploadSucceeded = true;
+                break;
+            } else {
+                //todo warning status
+            }
+        }
+        if (!$uploadSucceeded)
+        {
+            //todo error status & exit
+            throw new IntelliSchoolException("Upload failed");
+        }
+        //todo upload success message
     }
 
     public function doSync()
