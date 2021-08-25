@@ -328,7 +328,7 @@ class SyncHandler implements LoggerAwareInterface
                 RequestOptions::BODY => $tmpFile
             ]);
             $this->logGuzzleResponse($uploadResponse);
-            if ($uploadResponse->getStatusCode() >= 200 && $uploadResponse < 300)
+            if ($uploadResponse->getStatusCode() >= 200 && $uploadResponse->getStatusCode() < 300)
             {
                 $uploadSucceeded = true;
                 break;
