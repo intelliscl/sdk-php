@@ -80,7 +80,7 @@ class SyncHandler implements LoggerAwareInterface
                 [$this->authHandler->getTenantId(), $this->authHandler->getDeploymentId()],
                 $template
             );
-        $this->logger->debug("Generated url: ".$url, ['template'=>$url]);
+        $this->logger->debug("Generated url: ".$url, ['template'=>$template]);
         return $url;
     }
 
@@ -178,7 +178,7 @@ class SyncHandler implements LoggerAwareInterface
         $this->logger->info("Found ".count($jobs).' jobs');
         foreach ($jobs as $syncJob)
         {
-            $this->logger->debug("Processing job");
+            $this->logger->debug("Processing job", ['job'=>$syncJob]);
             $this->updateJobStatus(
                 (new JobStatus())
                     ->setEventType('Info')
