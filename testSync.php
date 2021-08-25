@@ -5,9 +5,15 @@ class PrintLogger extends \Psr\Log\AbstractLogger{
 
     public function log($level, $message, array $context = array())
     {
-        echo "<div><strong>$level</strong>: $message<br>Context:<pre>";
-        var_dump($context);
-        echo "</pre></div>";
+        echo "<div><strong>$level</strong>: $message";
+
+        if (!empty($context)) {
+            echo "<br>Context:<textarea rows='10' cols='100'>";
+            var_dump($context);
+            echo "</textarea>";
+        }
+
+        echo "</div>";
     }
 }
 
