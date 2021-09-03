@@ -30,9 +30,10 @@
 		"firebase/php-jwt": "^5.4"
 	},
 	"suggest": {
-		"ext-pdo_mysql": "*",
-		"ext-pdo_pgsql": "*",
-		"ext-pdo_sqlsrv": "*"
+		"ext-pdo_mysql": "For MySQL databases",
+		"ext-pdo_pgsql": "For Postgre databases",
+		"ext-pdo_sqlsrv": "For MsSQL databases",
+		"ext-openssl": "For Launch Token signing"
 	},
 	"autoload": {
 		"psr-4": {
