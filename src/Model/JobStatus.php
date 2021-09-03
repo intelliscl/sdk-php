@@ -19,6 +19,7 @@ class JobStatus implements \JsonSerializable
 
     public const INFO_EVENT = 'Info';
     public const ERROR_EVENT = 'Error';
+    public const WARNING_EVENT = 'Warning';
 
     public string $eventType;
     public string $source;

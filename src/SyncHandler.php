@@ -320,7 +320,6 @@ class SyncHandler implements LoggerAwareInterface
                 ->setJobStatus('uploading')
                 ->setJobInstance($syncJob->instanceId)
         );
-        $uploadSucceeded = false;
         for ($tries = 0; $tries < 5; $tries++)
         {
             $uploadResponse = $this->httpClient->put($sasUrl, [
@@ -330,18 +329,41 @@ class SyncHandler implements LoggerAwareInterface
             $this->logGuzzleResponse($uploadResponse);
             if ($uploadResponse->getStatusCode() >= 200 && $uploadResponse->getStatusCode() < 300)
             {
-                $uploadSucceeded = true;
                 break;
             } else {
-                //todo warning status
+                $this->updateJobStatus(
+                    (new JobStatus())
+                        ->setSource(self::JOB_MANAGER_NAME)
+                        ->setEventType(JobStatus::WARNING_EVENT)
+                        ->setEventId(2400)
+                        ->setMessage('Error while uploading payload')
+                        ->setJobInstance($syncJob->instanceId)
+                        ->setMeta(['responseCode'=>$uploadResponse->getStatusCode(), 'responseBody'=>$uploadResponse->getBody()->getContents()])
+                );
             }
         }
-        if (!$uploadSucceeded)
+        if ($tries == 5)//upload failed
         {
-            //todo error status & exit
+            $this->updateJobStatus(
+                (new JobStatus())
+                    ->setSource(self::JOB_MANAGER_NAME)
+                    ->setEventType(JobStatus::ERROR_EVENT)
+                    ->setEventId(2400)
+                    ->setMessage('Sync Agent was unable to upload payload after 5 attempts')
+                    ->setJobStatus('failed')
+                    ->setJobInstance($syncJob->instanceId)
+            );
             throw new IntelliSchoolException("Upload failed");
         }
-        //todo upload success message
+        $this->updateJobStatus(
+            (new JobStatus())
+                ->setSource(self::JOB_MANAGER_NAME)
+                ->setEventType(JobStatus::INFO_EVENT)
+                ->setEventId(2003)
+                ->setMessage('Uploaded payload to storage endpoint.')
+                ->setJobStatus('pending_ingestion')
+                ->setJobInstance($syncJob->instanceId)
+        );
     }
 
     public function doSync()
