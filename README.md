@@ -54,22 +54,20 @@ $tokenStore = \Intellischool\OAuth2::createTokenStore(
 To create an LTI Launch token with the given parameters:
 
 ```php
-$params = new \Intellischool\Lti\LaunchToken\Params();
-$params
-    ->setIssuer('https://lms.school.edu')
-    ->setSubject('jane@school.edu')
-    ->setName('Ms Jane Marie Doe')
-    ->setGivenName('Jane')
-    ->setMiddleName('Marie')
-    ->setFamilyName('Doe')
-    ->setEmail('jane@school.edu')
-    ->setPicture('https://lms.school.edu/jane.jpg')
-    ->setPersonId('person_id_in_external_system')
-    ->setRole('student')
-    ->setTarget('https://analytics.intellischool.cloud/dashboard/12345')
-    ->setLaunchPresentation('iframe');
-    
-$token = \Intellischool\Lti\LaunchToken::generate($params,'your_rsa_secret_key');
+$token = (new \Intellischool\LTI\LaunchToken())->setIssuer('https://lms.school.edu')
+                                               ->setDeploymentId('test_deployment_id')
+                                               ->setSubject('jane@school.edu')
+                                               ->setName('Ms Jane Marie Doe')
+                                               ->setGivenName('Jane')
+                                               ->setMiddleName('Marie')
+                                               ->setFamilyName('Doe')
+                                               ->setEmail('jane@school.edu')
+                                               ->setPicture('https://lms.school.edu/jane.jpg')
+                                               ->setRole('student')
+                                               ->setTargetLinkUri('https://analytics.intellischool.cloud/dashboard/12345')
+                                               ->setResourceLink('http://some.url')
+                                               ->setLaunchPresentation('iframe');
+$encodedToken = $token->build($key);
 ```
 
 Once your token has been generated, it should be `POST`ed in the `id_token` field to our LTI endpoint from the browser:
