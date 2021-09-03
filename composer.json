@@ -23,11 +23,11 @@
 		"ext-pdo": "*",
 		"guzzlehttp/guzzle": "^7.0",
 		"psr/log": "^1.1.4",
-		"microsoft/azure-storage-blob": "^1.5.2",
+		"firebase/php-jwt": "^5.4",
 		
+		"microsoft/azure-storage-blob": "^1.5.2",
 		"php-curl-class/php-curl-class": "@dev",
-		"vlucas/phpdotenv": "^5.3",
-		"firebase/php-jwt": "^5.4"
+		"vlucas/phpdotenv": "^5.3"
 	},
 	"suggest": {
 		"ext-pdo_mysql": "For MySQL databases",
