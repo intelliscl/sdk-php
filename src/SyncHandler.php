@@ -1,12 +1,15 @@
-<?php
+<?php /** @noinspection PhpUnused */
 
 namespace Intellischool;
 
+use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
 use Intellischool\Model\JobStatus;
 use Intellischool\Model\SyncJob;
+use PDO;
+use PDOException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
@@ -58,7 +61,7 @@ class SyncHandler implements LoggerAwareInterface
 
     public static function createWithOAuth2($tokenStore): self
     {
-        throw new \Exception("Not yet implemented");//todo OAuth2
+        throw new Exception("Not yet implemented");//todo OAuth2
     }
 
     /**
@@ -191,7 +194,7 @@ class SyncHandler implements LoggerAwareInterface
         }
         try
         {
-            $pdo = new \PDO($pdoString, $syncJob->dbUsername, $syncJob->dbPassword);
+            $pdo = new PDO($pdoString, $syncJob->dbUsername, $syncJob->dbPassword);
             $file = tmpfile();
             if ($file === false) {
                 $this->logger->error('Could not create temp file');
@@ -208,7 +211,7 @@ class SyncHandler implements LoggerAwareInterface
             }
             $statement = $pdo->query($query);
             $cols = null;//ensure they always appear in the same order
-            while ($row = $statement->fetch(\PDO::FETCH_ASSOC)) {
+            while ($row = $statement->fetch(PDO::FETCH_ASSOC)) {
                 if ($cols == null) {
                     $cols = array_keys($row);
                     fputcsv($file, $cols);
@@ -229,7 +232,7 @@ class SyncHandler implements LoggerAwareInterface
                     ->setJobInstance($syncJob->instanceId)
                     ->setMeta(['rows'=>$statement->rowCount()])
             );
-        } catch (\PDOException $e) {
+        } catch (PDOException $e) {
             $this->logger->error('Sync process failed failed', ['exception'=>$e]);
             $this->updateJobStatus(
                 (new JobStatus())
@@ -323,10 +326,26 @@ class SyncHandler implements LoggerAwareInterface
         for ($tries = 0; $tries < 5; $tries++)
         {
             rewind($tmpFile);
-            $uploadResponse = $this->httpClient->put($sasUrl, [
-                RequestOptions::HEADERS => $headers,
-                RequestOptions::BODY => $tmpFile
-            ]);
+            try
+            {
+                $uploadResponse = $this->httpClient->put($sasUrl, [
+                    RequestOptions::HEADERS => $headers,
+                    RequestOptions::BODY    => $tmpFile
+                ]);
+            }
+            catch (GuzzleException $e)
+            {
+                $this->updateJobStatus(
+                    (new JobStatus())
+                        ->setSource(self::JOB_MANAGER_NAME)
+                        ->setEventType(JobStatus::WARNING_EVENT)
+                        ->setEventId(2400)
+                        ->setMessage('Error while uploading payload')
+                        ->setJobInstance($syncJob->instanceId)
+                        ->setMeta(['exception'=>'GuzzleException', 'message'=>$e->getMessage(), 'file'=>$e->getFile(), 'line'=>$e->getLine()])
+                );
+                continue;
+            }
             $this->logGuzzleResponse($uploadResponse);
             if ($uploadResponse->getStatusCode() >= 200 && $uploadResponse->getStatusCode() < 300)
             {
