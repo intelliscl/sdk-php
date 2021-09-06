@@ -322,6 +322,7 @@ class SyncHandler implements LoggerAwareInterface
         );
         for ($tries = 0; $tries < 5; $tries++)
         {
+            rewind($tmpFile);
             $uploadResponse = $this->httpClient->put($sasUrl, [
                 RequestOptions::HEADERS => $headers,
                 RequestOptions::BODY => $tmpFile
