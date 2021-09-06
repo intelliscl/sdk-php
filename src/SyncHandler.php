@@ -59,9 +59,13 @@ class SyncHandler implements LoggerAwareInterface
         return new self(new BasicIdapHandler($deploymentId, $deploymentSecret));
     }
 
-    public static function createWithOAuth2($tokenStore): self
+    public static function createWithOAuth2($tokenStore, $clientId, $clientSecret): self
     {
-        throw new Exception("Not yet implemented");//todo OAuth2
+        if (empty($tokenStore['access_token']) && empty($tokenStore['refresh_token']))
+        {
+            throw new IntelliSchoolException('Token Store contains no tokens');
+        }
+        return new self(new OAuth2IdapHandler($tokenStore, $clientId, $clientSecret));
     }
 
     /**

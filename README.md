@@ -26,7 +26,7 @@ To initiate an OAuth2 flow:
 $authUrl = \Intellischool\OAuth2::getAuthUrl(
     'your_client_id',
     'https://your.redirect.uri/callback',
-    'openid offline_access sync_agent lti_launch'
+    ['openid', 'offline_access', 'sync_agent', 'lti_launch']
 );
 
 header('Location: '.$authUrl);
@@ -35,8 +35,7 @@ header('Location: '.$authUrl);
 At your callback/redirect endpoint:
 
 ```php
-$tokenStore = \Intellischool\OAuth2::createTokenStore(
-    'authorization_code',
+$tokenStore = \Intellischool\OAuth2::exchangeCodeForToken(
     $_GET['code'],
     'https://your.redirect.uri/callback',
     'your_client_id',
@@ -88,10 +87,10 @@ To instantiate the Sync Agent using a deployment ID and secret:
 $agent = \Intellischool\SyncAgent::createWithIdAndSecret('deployment_id','deployment_secret');
 ```
 
-To instantiate the Sync Agent using an OAuth2 token store:
+To instantiate the Sync Agent using an OAuth2 token store and your client id & secret:
 
 ```php
-$agent = \Intellischool\SyncAgent::createWithOAuth2($tokenStore);
+$agent = \Intellischool\SyncAgent::createWithOAuth2($tokenStore, 'your_client_id', 'your_client_secret');
 ```
 
 ### Executing sync jobs
