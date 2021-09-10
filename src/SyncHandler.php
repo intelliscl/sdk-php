@@ -326,7 +326,7 @@ class SyncHandler implements LoggerAwareInterface
             $tmpFileStream->rewind();
             try
             {
-                $uploadResponse = $blobService->createBlockBlob('ingestion', $this->authHandler->getDeploymentId().'_'.$syncJob->instanceId.'.csv', $tmpFileStream);
+                $uploadResponse = $blobService->createBlockBlob('ingestion', $this->authHandler->getTenantId().'_'.$syncJob->instanceId.'.csv', $tmpFileStream);
             }
             catch (Exception $e)
             {
