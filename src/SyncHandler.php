@@ -8,6 +8,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
 use Intellischool\Model\JobStatus;
 use Intellischool\Model\SyncJob;
+use MicrosoftAzure\Storage\Blob\BlobRestProxy;
 use PDO;
 use PDOException;
 use Psr\Http\Message\ResponseInterface;
@@ -295,8 +296,8 @@ class SyncHandler implements LoggerAwareInterface
             throw new IntelliSchoolException('Failed to get job upload URI. HTTP Response code '.$response->getStatusCode().' Body: '.$response->getBody()->getContents());
         }
         $sasResponse = json_decode($response->getBody()->getContents());
-        $sasUrl = $sasResponse->sas_url;
-        if (empty($sasUrl)) {
+        $connectionString = $sasResponse->connection_string;
+        if (empty($connectionString)) {
             $this->updateJobStatus(
                 (new JobStatus())
                     ->setSource(self::JOB_MANAGER_NAME)
@@ -309,15 +310,6 @@ class SyncHandler implements LoggerAwareInterface
             $this->logger->error('Sync agent encountered an error while retrieving upload URI: no sas_url found', ['body'=>$sasResponse]);
             return;
         }
-        $headers = [];
-        if (!empty($sasResponse->headers))
-        {
-            foreach ($sasResponse->headers as $header)
-            {
-                $headers[$header->key] = $header->value;
-            }
-            $this->logger->debug('found headers', $headers);
-        }
         $this->updateJobStatus(
             (new JobStatus())
                 ->setSource(self::JOB_MANAGER_NAME)
@@ -327,18 +319,20 @@ class SyncHandler implements LoggerAwareInterface
                 ->setJobStatus('uploading')
                 ->setJobInstance($syncJob->instanceId)
         );
+        $blobService = BlobRestProxy::createBlobService($connectionString);
+        $tmpFileStream = new NonClosingStream($tmpFile);
         for ($tries = 0; $tries < 5; $tries++)
         {
-            rewind($tmpFile);
+            $tmpFileStream->rewind();
             try
             {
-                $uploadResponse = $this->httpClient->put($sasUrl, [
-                    RequestOptions::HEADERS => $headers,
-                    RequestOptions::BODY    => $tmpFile
-                ]);
+                $uploadResponse = $blobService->createBlockBlob('ingestion', $this->authHandler->getDeploymentId().'_'.$syncJob->instanceId.'.csv', $tmpFileStream);
             }
-            catch (GuzzleException $e)
+            catch (Exception $e)
             {
+                while($e->getPrevious() != null) {//drill down to the actual exception
+                    $e = $e->getPrevious();
+                }
                 $this->updateJobStatus(
                     (new JobStatus())
                         ->setSource(self::JOB_MANAGER_NAME)
@@ -346,23 +340,21 @@ class SyncHandler implements LoggerAwareInterface
                         ->setEventId(2400)
                         ->setMessage('Error while uploading payload')
                         ->setJobInstance($syncJob->instanceId)
-                        ->setMeta(['exception'=>'GuzzleException', 'message'=>$e->getMessage(), 'file'=>$e->getFile(), 'line'=>$e->getLine()])
+                        ->setMeta(['exception'=>get_class($e), 'message'=>$e->getMessage()])
                 );
                 continue;
             }
-            $this->logGuzzleResponse($uploadResponse);
-            if ($uploadResponse->getStatusCode() >= 200 && $uploadResponse->getStatusCode() < 300)
+            if (!empty($uploadResponse))
             {
-                break;
+                break; // it succeeded
             } else {
                 $this->updateJobStatus(
                     (new JobStatus())
                         ->setSource(self::JOB_MANAGER_NAME)
                         ->setEventType(JobStatus::WARNING_EVENT)
                         ->setEventId(2400)
-                        ->setMessage('Error while uploading payload')
+                        ->setMessage('Error while uploading payload, no response from BlobRestProxy')
                         ->setJobInstance($syncJob->instanceId)
-                        ->setMeta(['responseCode'=>$uploadResponse->getStatusCode(), 'responseBody'=>$uploadResponse->getBody()->getContents()])
                 );
             }
         }
