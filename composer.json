@@ -1,20 +1,43 @@
 {
-  "name": "intelliscl/sdk",
-  "version": "0.1.0",
-  "description": "Intellischool SDK for PHP",
-  "keywords": [
-    "intellischool",
-    "sdk",
-    "lti",
-    "lti launch",
-    "api"
-  ],
-  "homepage": "https://intellischool.co",
-  "license": "Apache-2.0",
-  "authors": [
-    {
-      "name": "Intellischool",
-      "homepage": "https://intellischool.co"
-    }
-  ]
+	"name": "intelliscl/sdk",
+	"version": "0.1.0",
+	"description": "Intellischool SDK for PHP",
+	"keywords": [
+		"intellischool",
+		"sdk",
+		"lti",
+		"lti launch",
+		"api"
+	],
+	"homepage": "https://intellischool.co",
+	"license": "Apache-2.0",
+	"authors": [
+		{
+			"name": "Intellischool",
+			"homepage": "https://intellischool.co"
+		}
+	],
+	"require": {
+		"php": ">=7.4",
+		"ext-json": "*",
+		"ext-pdo": "*",
+		"guzzlehttp/guzzle": "^7.0",
+		"psr/log": "^1.1.4",
+		"firebase/php-jwt": "^5.4",
+		"kamermans/guzzle-oauth2-subscriber": "^1.0.8",
+		"microsoft/azure-storage-blob": "^1.5.2",
+		
+		"guzzlehttp/psr7": "^1.8.2"
+	},
+	"suggest": {
+		"ext-pdo_mysql": "For MySQL databases",
+		"ext-pdo_pgsql": "For Postgre databases",
+		"ext-pdo_sqlsrv": "For MsSQL databases",
+		"ext-openssl": "For Launch Token signing"
+	},
+	"autoload": {
+		"psr-4": {
+			"Intellischool\\": "src/"
+		}
+	}
 }

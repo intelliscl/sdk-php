@@ -26,7 +26,7 @@ To initiate an OAuth2 flow:
 $authUrl = \Intellischool\OAuth2::getAuthUrl(
     'your_client_id',
     'https://your.redirect.uri/callback',
-    'openid offline_access sync_agent lti_launch'
+    ['openid', 'offline_access', 'sync_agent', 'lti_launch']
 );
 
 header('Location: '.$authUrl);
@@ -35,8 +35,7 @@ header('Location: '.$authUrl);
 At your callback/redirect endpoint:
 
 ```php
-$tokenStore = \Intellischool\OAuth2::createTokenStore(
-    'authorization_code',
+$tokenStore = \Intellischool\OAuth2::exchangeCodeForToken(
     $_GET['code'],
     'https://your.redirect.uri/callback',
     'your_client_id',
@@ -54,22 +53,20 @@ $tokenStore = \Intellischool\OAuth2::createTokenStore(
 To create an LTI Launch token with the given parameters:
 
 ```php
-$params = new \Intellischool\Lti\LaunchToken\Params();
-$params
-    ->setIssuer('https://lms.school.edu')
-    ->setSubject('jane@school.edu')
-    ->setName('Ms Jane Marie Doe')
-    ->setGivenName('Jane')
-    ->setMiddleName('Marie')
-    ->setFamilyName('Doe')
-    ->setEmail('jane@school.edu')
-    ->setPicture('https://lms.school.edu/jane.jpg')
-    ->setPersonId('person_id_in_external_system')
-    ->setRole('student')
-    ->setTarget('https://analytics.intellischool.cloud/dashboard/12345')
-    ->setLaunchPresentation('iframe');
-    
-$token = \Intellischool\Lti\LaunchToken::generate($params,'your_rsa_secret_key');
+$token = (new \Intellischool\LTI\LaunchToken())->setIssuer('https://lms.school.edu')
+                                               ->setDeploymentId('test_deployment_id')
+                                               ->setSubject('jane@school.edu')
+                                               ->setName('Ms Jane Marie Doe')
+                                               ->setGivenName('Jane')
+                                               ->setMiddleName('Marie')
+                                               ->setFamilyName('Doe')
+                                               ->setEmail('jane@school.edu')
+                                               ->setPicture('https://lms.school.edu/jane.jpg')
+                                               ->setRole('student')
+                                               ->setTargetLinkUri('https://analytics.intellischool.cloud/dashboard/12345')
+                                               ->setResourceLink('http://some.url')
+                                               ->setLaunchPresentation('iframe');
+$encodedToken = $token->build($key);
 ```
 
 Once your token has been generated, it should be `POST`ed in the `id_token` field to our LTI endpoint from the browser:
@@ -90,10 +87,10 @@ To instantiate the Sync Agent using a deployment ID and secret:
 $agent = \Intellischool\SyncAgent::createWithIdAndSecret('deployment_id','deployment_secret');
 ```
 
-To instantiate the Sync Agent using an OAuth2 token store:
+To instantiate the Sync Agent using an OAuth2 token store and your client id & secret:
 
 ```php
-$agent = \Intellischool\SyncAgent::createWithOAuth2($tokenStore);
+$agent = \Intellischool\SyncAgent::createWithOAuth2($tokenStore, 'your_client_id', 'your_client_secret');
 ```
 
 ### Executing sync jobs
