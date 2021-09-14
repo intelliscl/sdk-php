@@ -186,6 +186,7 @@ class SyncHandler implements LoggerAwareInterface
         $this->logger->debug('Job Info', ['pdoString' => $pdoString, 'query' => $query]);
         if (empty($pdoString) || empty($query))
         {
+            $this->logger->error('Failed to find query or generate PDO string',['pdo'=>$pdoString, 'query'=>$query]);
             $this->updateJobStatus(
                 (new JobStatus())
                     ->setEventType(JobStatus::ERROR_EVENT)
@@ -214,7 +215,9 @@ class SyncHandler implements LoggerAwareInterface
                 );
                 return;
             }
+            $this->logger->info("Starting query");
             $statement = $pdo->query($query);
+            $this->logger->info("Starting retrieval");
             $cols = null;//ensure they always appear in the same order
             while ($row = $statement->fetch(PDO::FETCH_ASSOC)) {
                 if ($cols == null) {
@@ -253,6 +256,7 @@ class SyncHandler implements LoggerAwareInterface
         }
         fflush($file);
         rewind($file);
+        $this->logger->info("Completed CSV output");
 
         $this->uploadSyncJob($syncJob, $file);
     }
@@ -319,6 +323,7 @@ class SyncHandler implements LoggerAwareInterface
                 ->setJobStatus('uploading')
                 ->setJobInstance($syncJob->instanceId)
         );
+        $this->logger->info("Beginning upload");
         $blobService = BlobRestProxy::createBlobService($connectionString);
         $tmpFileStream = new NonClosingStream($tmpFile);
         for ($tries = 0; $tries < 5; $tries++)
@@ -371,6 +376,7 @@ class SyncHandler implements LoggerAwareInterface
             );
             throw new IntelliSchoolException("Upload failed");
         }
+        $this->logger->info("Upload complete");
         $this->updateJobStatus(
             (new JobStatus())
                 ->setSource(self::JOB_MANAGER_NAME)
