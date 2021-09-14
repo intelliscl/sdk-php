@@ -227,7 +227,7 @@ class SyncHandler implements LoggerAwareInterface
                 $values = array();
                 foreach ($cols as $col)
                 {
-                    $values[$col] = $row[$col];
+                    $values[] = $row[$col];
                 }
                 fputcsv($file, $values);
             }
