@@ -1,6 +1,6 @@
 {
 	"name": "intelliscl/sdk",
-	"version": "v0.2-beta",
+	"version": "0.2.0.0-beta",
 	"description": "Intellischool SDK for PHP",
 	"keywords": [
 		"intellischool",
