@@ -64,7 +64,7 @@ $token = (new \Intellischool\LTI\LaunchToken())->setIssuer('https://lms.school.e
                                                ->setPicture('https://lms.school.edu/jane.jpg')
                                                ->setRole('student')
                                                ->setTargetLinkUri('https://analytics.intellischool.cloud/dashboard/12345')
-                                               ->setResourceLink('http://some.url')
+                                               ->setResourceLink(0)
                                                ->setLaunchPresentation('iframe');
 $encodedToken = $token->build($key);
 ```
