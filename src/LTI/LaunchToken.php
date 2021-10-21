@@ -191,7 +191,7 @@ class LaunchToken
      */
     public function setResourceLink(string $value): self
     {
-        $this->payload[self::LTI_CLAIM_RESOURCE_LINK] = $value;
+        $this->payload[self::LTI_CLAIM_RESOURCE_LINK]['id'] = $value;
         return $this;
     }
 
