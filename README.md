@@ -62,12 +62,14 @@ $token = (new \Intellischool\LTI\LaunchToken())->setIssuer('https://lms.school.e
                                                ->setFamilyName('Doe')
                                                ->setEmail('jane@school.edu')
                                                ->setPicture('https://lms.school.edu/jane.jpg')
-                                               ->setRole('student')
+                                               ->setRole('http://purl.imsglobal.org/vocab/lis/v2/institution/person#Student')
                                                ->setTargetLinkUri('https://analytics.intellischool.cloud/dashboard/12345')
                                                ->setResourceLink(0)
                                                ->setLaunchPresentation('iframe');
 $encodedToken = $token->build($key);
 ```
+
+__Note:__ Roles must be a valid LIS role as per the [LTI specification](https://www.imsglobal.org/spec/lti/v1p3/#role-vocabularies).
 
 Once your token has been generated, it should be `POST`ed in the `id_token` field to our LTI endpoint from the browser:
 `https://core.intellischool.net/auth/lti`
