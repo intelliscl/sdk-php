@@ -7,14 +7,14 @@ use Intellischool\IntelliSchoolException;
 
 class LaunchToken
 {
-    const LTI_CLAIM_ROLES = 'https://purl.imsglobal.org/lti/claim/roles';
-    const LTI_CLAIM_DEPLOYMENT_ID = 'https://purl.imsglobal.org/lti/claim/deployment_id';
-    const LTI_CLAIM_MESSAGE_TYPE = 'https://purl.imsglobal.org/lti/claim/message_type';
-    const LTI_CLAIM_VERSION = 'https://purl.imsglobal.org/lti/claim/version';
-    const LTI_CLAIM_RESOURCE_LINK = 'https://purl.imsglobal.org/lti/claim/resource_link';
-    const LTI_CLAIM_TARGET_LINK_URI = 'https://purl.imsglobal.org/lti/claim/target_link_uri';
-    const LTI_CLAIM_LIS = 'https://purl.imsglobal.org/lti/claim/lis';
-    const LTI_CLAIM_LAUNCH_PRESENTATION = 'https://purl.imsglobal.org/lti/claim/launch_presentation';
+    const LTI_CLAIM_ROLES = 'https://purl.imsglobal.org/spec/lti/claim/roles';
+    const LTI_CLAIM_DEPLOYMENT_ID = 'https://purl.imsglobal.org/spec/lti/claim/deployment_id';
+    const LTI_CLAIM_MESSAGE_TYPE = 'https://purl.imsglobal.org/spec/lti/claim/message_type';
+    const LTI_CLAIM_VERSION = 'https://purl.imsglobal.org/spec/lti/claim/version';
+    const LTI_CLAIM_RESOURCE_LINK = 'https://purl.imsglobal.org/spec/lti/claim/resource_link';
+    const LTI_CLAIM_TARGET_LINK_URI = 'https://purl.imsglobal.org/spec/lti/claim/target_link_uri';
+    const LTI_CLAIM_LIS = 'https://purl.imsglobal.org/spec/lti/claim/lis';
+    const LTI_CLAIM_LAUNCH_PRESENTATION = 'https://purl.imsglobal.org/spec/lti/claim/launch_presentation';
 
     const REQUIRED_CLAIMS = [
         'iss',
