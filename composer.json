@@ -23,7 +23,7 @@
 		"ext-pdo": "*",
 		"guzzlehttp/guzzle": "^7.0",
 		"psr/log": "^1.1.4",
-		"firebase/php-jwt": "^5.4",
+		"firebase/php-jwt": "^5.4 || ^6.0",
 		"kamermans/guzzle-oauth2-subscriber": "^1.0.8",
 		"microsoft/azure-storage-blob": "^1.5.2",
 		
