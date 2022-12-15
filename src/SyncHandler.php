@@ -118,7 +118,7 @@ class SyncHandler implements LoggerAwareInterface
                     ->setEventId(2000)
                     ->setMessage('Sync Agent was unable to retrieve sync jobs from the IDaP. ' . $e->getMessage())
             );
-            throw new IntelliSchoolException('Failed to get jobs list', $e);
+            throw new IntelliSchoolException('Failed to get jobs list. ' . $e->getMessage(), $e->getCode());
         }
         $this->logGuzzleResponse($response);
         if ($response->getStatusCode() != 200) {
@@ -284,7 +284,7 @@ class SyncHandler implements LoggerAwareInterface
                     ->setJobStatus('failed')
                     ->setJobInstance($syncJob->instanceId)
             );
-            throw new IntelliSchoolException('Failed to get job upload URI.', $e);
+            throw new IntelliSchoolException('Failed to get job upload URI. ' . $e->getMessage(), $e->getCode());
         }
         $this->logGuzzleResponse($response);
         if ($response->getStatusCode() != 200) {
