@@ -113,11 +113,11 @@ Jobs are managed by the Intellischool Data Platform. Depending on the size of th
 
 1. Install pre-reqs with Composer
 
-After cloning… get the basics + suggested dependencies
+After cloning… get the basics + suggested dependencies*
 
 ```
 composer install
-composer require ext-pdo_sqlsrv
+    composer require ext-pdo_sqlsrv
 ```
 
 2. Go into the examples dir
@@ -131,3 +131,19 @@ It just goes to stdout so best to direct it into a log file
 
 ```
 php Sync.php token secret > sync-run-1.log
+
+```
+---
+*NB **if you're on macOS or Linux**… then adding MSSQL deps throws an error – something like *"Could not find a matching version of package ext-pdo_sqlsrv."*
+
+Follow [Microsoft's guidance from here](https://learn.microsoft.com/en-us/sql/connect/php/installation-tutorial-linux-mac) to install dependencies for MSSQL
+
+... then
+
+``` 
+composer require ext-pdo_sqlsrv
+```
+
+Even then I had an error from the sync script:
+
+"This extension requires the Microsoft ODBC Driver for SQL Server to communicate with SQL Server. Access the following URL to download the ODBC Driver for SQL Server for arm64: [https://go.microsoft.com/fwlink/?LinkId=163712](https://go.microsoft.com/fwlink/?LinkId=163712)"… although [this](https://learn.microsoft.com/en-us/sql/connect/odbc/linux-mac/install-microsoft-odbc-driver-sql-server-macos?view=sql-server-ver16) looks to be a better resource.
