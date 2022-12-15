@@ -8,13 +8,13 @@ class JobStatus implements \JsonSerializable
      * PHP Property => JSON property
      */
     private const PROPERTY_MAP = [
-        'eventType'   => 'Event_type',
-        'source'      => 'Source',
-        'eventId'     => 'Event_id',
-        'message'     => 'Message',
-        'jobStatus'   => 'Job_status',
+        'eventType' => 'Event_type',
+        'source' => 'Source',
+        'eventId' => 'Event_id',
+        'message' => 'Message',
+        'jobStatus' => 'Job_status',
         'jobInstance' => 'Job_instance',
-        'meta'        => 'Metadata'
+        'meta' => 'Metadata'
     ];
 
     public const INFO_EVENT = 'Info';
@@ -108,13 +108,11 @@ class JobStatus implements \JsonSerializable
     }
 
     /** @inheritDoc */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $output = array();
-        foreach (self::PROPERTY_MAP as $phpProp => $jsonProp)
-        {
-            if (!empty($this->{$phpProp}))
-            {
+        foreach (self::PROPERTY_MAP as $phpProp => $jsonProp) {
+            if (!empty($this->{$phpProp})) {
                 $output[$jsonProp] = $this->{$phpProp};
             }
         }
