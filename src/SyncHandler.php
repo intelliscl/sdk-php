@@ -424,7 +424,7 @@ class SyncHandler implements LoggerAwareInterface
         return $this;
     }
 
-    public function setLogger(LoggerInterface $logger)
+    public function setLogger(LoggerInterface $logger): void
     {
         $this->logger = $logger;
     }

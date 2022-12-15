@@ -7,7 +7,8 @@ use Psr\Log\LogLevel;
 
 require_once '../vendor/autoload.php';
 
-class PrintLogger extends \Psr\Log\AbstractLogger{
+class PrintLogger extends \Psr\Log\AbstractLogger
+{
     private bool $enableDebugLog = false;
 
     public function __construct(bool $debug)
@@ -15,7 +16,7 @@ class PrintLogger extends \Psr\Log\AbstractLogger{
         $this->enableDebugLog = $debug;
     }
 
-    public function log($level, $message, array $context = array())
+    public function log($level, Stringable|string $message, array $context = array()): void
     {
         echo "$level: $message\n";
 
@@ -26,7 +27,7 @@ class PrintLogger extends \Psr\Log\AbstractLogger{
         echo "\n-------------------------------\n\n";
     }
 
-    public function debug($message, array $context = array())
+    public function debug(Stringable|string $message, array $context = array()): void
     {
         if ($this->enableDebugLog) {
             $this->log(LogLevel::DEBUG, $message, $context);
@@ -37,11 +38,10 @@ class PrintLogger extends \Psr\Log\AbstractLogger{
 }
 
 $handler = \Intellischool\SyncHandler::createWithIdAndSecret($argv[1], $argv[2]);
-$handler->setLogger(new PrintLogger(false));//logger is optional
-try
-{
+$handler->setLogger(new PrintLogger(true)); //logger is optional
+try {
     $handler->doSync();
 } catch (Exception $e) {
-	echo "Unhandled exception: ";
+    echo "Unhandled exception: ";
     var_dump($e);
 }
