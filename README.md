@@ -104,3 +104,30 @@ $syncs = $agent->doSync();
 ```
 
 Jobs are managed by the Intellischool Data Platform. Depending on the size of the job(s) the sync process may take seconds to hours. You should ensure that this job is run in the background of your app.
+
+
+---
+
+
+# To test out the example sync script
+
+1. Install pre-reqs with Composer
+
+After cloning… get the basics + suggested dependencies
+
+```
+composer install
+composer require ext-pdo_sqlsrv
+```
+
+2. Go into the examples dir
+```
+cd examples
+```
+
+3. Run the example Sync.php with the token and secret as args.
+
+It just goes to stdout so best to direct it into a log file
+
+```
+php Sync.php token secret > sync-run-1.log
